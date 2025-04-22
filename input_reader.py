@@ -179,13 +179,101 @@ def b_matrix_reader(opt_file):
 def gaussian_parser(gaussian_fchk_file):
     with open(gaussian_fchk_file, 'r') as file:
         for line in file:
+            
             if "Number of atoms" in line:
-                atoms = int(" ".join(line.split()).split()[-1])
+                num_atoms = int(" ".join(line.split()).split()[-1])
+                
             if "Multiplicity" in line:
                 mult = int(" ".join(line.split()).split()[-1])
-
+                
+            #### Here you should read the atomic symbols !!
+            
+            if "Current cartesian coordinates" in line:
+                coord = []
+                if (3*num_atoms)/5 >= 1:
+                    if (3*num_atoms) % 5 != 0:
+                        num_of_lines = int(3*num_atoms / 5 + 1)
+                    else:
+                        num_of_lines = int(3*num_atoms / 5)
+                else:
+                    num_of_lines = 1    
+                for i in range(0,num_of_lines,1):
+                    coord.extend(next(file).split())
+                coord = np.asarray(coord, dtype=float)
+                coord = np.reshape(coord, (3,num_atoms))
+                
+            if "Real atomic weights" in line:
+                masses = []
+                if num_atoms/5 >= 1:
+                    if num_atoms % 5 != 0:
+                        num_of_lines = int(num_atoms / 5 + 1)
+                    else:
+                        num_of_lines = int(num_atoms / 5)
+                else:
+                    num_of_lines = 1
+                for i in range(0,num_of_lines,1):
+                    masses.extend(next(file).split())
+                masses = np.asarray(masses, dtype=float)
+                mass_matrix = np.zeros( (3*num_atoms,3*num_atoms), dtype = float )
+                mass_triples = [ masses[i] for i in range(num_atoms) for j in range(3)]
+                mass_triples = np.asarray(mass_triples)
+                mass_triples = mass_triples.astype(float)  
+                for i in range(len(mass_triples)):
+                    mass_matrix[i,i] = mass_triples[i]
+                
+            #### Here you should read the internal coordinates !!
+            
+            if "Cartesian Gradient" in line:
+                gradient_cart = []
+                if (3*num_atoms)/5 >= 1:
+                    if (3*num_atoms) % 5 != 0:
+                        num_of_lines = int(3*num_atoms / 5 + 1)
+                    else:
+                        num_of_lines = int(3*num_atoms / 5)
+                else:
+                    num_of_lines = 1    
+                for i in range(0,num_of_lines,1):
+                    gradient_cart.extend(next(file).split())
+                gradient_cart = np.asarray(gradient_cart, dtype=float)
+                
+            if "Cartesian Force Constants" in line:
+                lower_triangle = []
+                hessian_cart = np.zeros((3*num_atoms,3*num_atoms))
+                triangular_dim = triangular_number(3*num_atoms)
+                if triangular_dim/5 >= 1:
+                    if triangular_dim % 5 != 0:
+                        num_of_lines = int(triangular_dim / 5 + 1)
+                    else:
+                        num_of_lines = int(triangular_dim / 5)
+                else:
+                    num_of_lines = 1
+                for i in range(0,num_of_lines,1):
+                    lower_triangle.extend(next(file).split())
+                
+                hessian_cart = triangle_to_square(lower_triangle)
+                for i in range(3*num_atoms):
+                    for j in range(3*num_atoms):
+                        hessian_cart[i][j] = hessian_cart[j][i]
+                
     file.close()
-    return atoms, mult
-#    return (atoms, masses, coord, gradient_cart, hessian_cart, mult, mass_matrix)
+    return num_atoms, mult, coord, masses, gradient_cart, hessian_cart, mass_matrix
+    #### Still requires internal coordinates and atom symbols 
 
 
+
+
+def triangular_number(n):
+    i, t = 1, 0
+    while i <= n:
+        t += i
+        i += 1
+    return t
+
+def triangle_to_square(triangle):
+    n = int(np.sqrt(len(triangle)*2))
+    mask = np.tri(n,dtype=bool, k=0)
+    out = np.zeros((n,n),dtype=float)
+    out[mask] = triangle
+    return out
+    
+ 
