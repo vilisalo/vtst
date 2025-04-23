@@ -60,7 +60,7 @@ class initialize:   # This initializes the required information from the *.hess 
                 self.freq = output.frequencies(self.fval_p)
             else:
                 self.stationary = True
-                self.freq = output.frequencies(self.fval_p)
+                self.freq = output.frequencies(self.fval)
                 if any(self.freq) < 0.0:
                     self.proj_modes = 1
                 else:
