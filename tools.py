@@ -1,6 +1,16 @@
 import warnings
 import numpy as np
+import scipy
 
+def get_generalized_inv_matrix(matrix):
+    u,s,vt = np.linalg.svd(matrix)
+    r = np.linalg.matrix_rank(matrix)
+    s[:r] = 1/s[:r]
+    m,n = matrix.shape
+    s_inv = scipy.linalg.diagsvd(s,m,n).T
+    matrix_inv = vt.T.dot(s_inv).dot(u.T)
+    return matrix_inv
+    
 def get_center_mass(coord, masses):
     cbye = [np.dot(masses[i], coord[i]) for i in range(len(coord))]
     r = np.sum(cbye, axis=0)

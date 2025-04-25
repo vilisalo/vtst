@@ -176,89 +176,131 @@ def b_matrix_reader(opt_file):
 
 ###### THESE ARE GAUSSIAN RELATED FUNCTIONS #######
 
-def gaussian_parser(gaussian_fchk_file):
-    with open(gaussian_fchk_file, 'r') as file:
-        for line in file:
-            
-            if "Number of atoms" in line:
-                num_atoms = int(" ".join(line.split()).split()[-1])
+class gaussian_parser:
+    def __init__(self, gaussian_fchk_file):
+        with open(gaussian_fchk_file, 'r') as file:
+            for line in file:
                 
-            if "Multiplicity" in line:
-                mult = int(" ".join(line.split()).split()[-1])
-                
-            #### Here you should read the atomic symbols !!
-            
-            if "Current cartesian coordinates" in line:
-                coord = []
-                if (3*num_atoms)/5 >= 1:
-                    if (3*num_atoms) % 5 != 0:
-                        num_of_lines = int(3*num_atoms / 5 + 1)
+                if "Number of atoms" in line:
+                    self.num_atoms = int(" ".join(line.split()).split()[-1])
+                    
+                if "Multiplicity" in line:
+                    self.mult = int(" ".join(line.split()).split()[-1])
+                    
+                if "Atomic numbers" in line:
+                    atoms = []
+                    if self.num_atoms/6 >= 1:
+                        if self.num_atoms % 6 != 0:
+                            num_of_lines = int(self.num_atoms / 6 + 1)
+                        else:
+                            num_of_lines = int(self.num_atoms / 6)
                     else:
-                        num_of_lines = int(3*num_atoms / 5)
-                else:
-                    num_of_lines = 1    
-                for i in range(0,num_of_lines,1):
-                    coord.extend(next(file).split())
-                coord = np.asarray(coord, dtype=float)
-                coord = np.reshape(coord, (3,num_atoms))
+                        num_of_lines = 1
+                    for i in range(0,num_of_lines,1):
+                        atoms.extend(next(file).split())
+                    atoms = np.asarray(atoms, dtype=str)
+                    self.atoms = atoms
                 
-            if "Real atomic weights" in line:
-                masses = []
-                if num_atoms/5 >= 1:
-                    if num_atoms % 5 != 0:
-                        num_of_lines = int(num_atoms / 5 + 1)
+                if "Current cartesian coordinates" in line:
+                    coord = []
+                    if (3*self.num_atoms)/5 >= 1:
+                        if (3*self.num_atoms) % 5 != 0:
+                            num_of_lines = int(3*self.num_atoms / 5 + 1)
+                        else:
+                            num_of_lines = int(3*self.num_atoms / 5)
                     else:
-                        num_of_lines = int(num_atoms / 5)
-                else:
-                    num_of_lines = 1
-                for i in range(0,num_of_lines,1):
-                    masses.extend(next(file).split())
-                masses = np.asarray(masses, dtype=float)
-                mass_matrix = np.zeros( (3*num_atoms,3*num_atoms), dtype = float )
-                mass_triples = [ masses[i] for i in range(num_atoms) for j in range(3)]
-                mass_triples = np.asarray(mass_triples)
-                mass_triples = mass_triples.astype(float)  
-                for i in range(len(mass_triples)):
-                    mass_matrix[i,i] = mass_triples[i]
-                
-            #### Here you should read the internal coordinates !!
-            
-            if "Cartesian Gradient" in line:
-                gradient_cart = []
-                if (3*num_atoms)/5 >= 1:
-                    if (3*num_atoms) % 5 != 0:
-                        num_of_lines = int(3*num_atoms / 5 + 1)
+                        num_of_lines = 1    
+                    for i in range(0,num_of_lines,1):
+                        coord.extend(next(file).split())
+                    coord = np.asarray(coord, dtype=float)
+                    self.coord = np.reshape(coord, (self.num_atoms,3))
+                    
+                if "Real atomic weights" in line:
+                    masses = []
+                    if self.num_atoms/5 >= 1:
+                        if self.num_atoms % 5 != 0:
+                            num_of_lines = int(self.num_atoms / 5 + 1)
+                        else:
+                            num_of_lines = int(self.num_atoms / 5)
                     else:
-                        num_of_lines = int(3*num_atoms / 5)
-                else:
-                    num_of_lines = 1    
-                for i in range(0,num_of_lines,1):
-                    gradient_cart.extend(next(file).split())
-                gradient_cart = np.asarray(gradient_cart, dtype=float)
-                
-            if "Cartesian Force Constants" in line:
-                lower_triangle = []
-                hessian_cart = np.zeros((3*num_atoms,3*num_atoms))
-                triangular_dim = triangular_number(3*num_atoms)
-                if triangular_dim/5 >= 1:
-                    if triangular_dim % 5 != 0:
-                        num_of_lines = int(triangular_dim / 5 + 1)
+                        num_of_lines = 1
+                    for i in range(0,num_of_lines,1):
+                        masses.extend(next(file).split())
+                    self.masses = np.asarray(masses, dtype=float)
+                    mass_matrix = np.zeros( (3*self.num_atoms,3*self.num_atoms), dtype = float )
+                    mass_triples = [ masses[i] for i in range(self.num_atoms) for j in range(3)]
+                    mass_triples = np.asarray(mass_triples)
+                    mass_triples = mass_triples.astype(float)  
+                    for i in range(len(mass_triples)):
+                        mass_matrix[i,i] = mass_triples[i]
+                    self.mass_matrix = mass_matrix
+                    
+                #### Here you should read the internal coordinates !!
+                if "Redundant internal coordinate indices" in line:
+                    redundant_coordinates= []
+                    num_of_indices = int(" ".join(line.split()).split()[-1])
+                    if num_of_indices / 6 >= 1:
+                        if num_of_indices % 6 != 0:
+                            num_of_lines = int(num_of_indices / 6 + 1)
+                        else:
+                            num_of_lines = int(num_of_indices / 6)
                     else:
-                        num_of_lines = int(triangular_dim / 5)
-                else:
-                    num_of_lines = 1
-                for i in range(0,num_of_lines,1):
-                    lower_triangle.extend(next(file).split())
-                
-                hessian_cart = triangle_to_square(lower_triangle)
-                for i in range(3*num_atoms):
-                    for j in range(3*num_atoms):
-                        hessian_cart[i][j] = hessian_cart[j][i]
-                
-    file.close()
-    return num_atoms, mult, coord, masses, gradient_cart, hessian_cart, mass_matrix
-    #### Still requires internal coordinates and atom symbols 
-
+                        num_of_lines = 1
+                    for i in range(0,num_of_lines,1):
+                        redundant_coordinates.extend(next(file).split())
+                    redundant_coordinates = np.asarray(redundant_coordinates, dtype=int)
+                    redundant_coordinates = np.reshape(redundant_coordinates, (int(len(redundant_coordinates)/4), 4))                              
+                    self.int = redundant_coordinates
+                    with open("internal_coordinates.txt", "w") as f:
+                        for i in self.int:
+                            if i[2] == 0:
+                                obj = ",".join(map(str,i[:2]))
+                                f.write(obj+"\n")
+                            else:
+                                if i[3] == 0:
+                                    obj = ",".join(map(str,i[:3]))
+                                    f.write(obj+"\n")
+                                else:
+                                    obj = ",".join(map(str,i[:4]))
+                                    f.write(obj+"\n")
+                        f.close()
+                                
+                    
+                if "Cartesian Gradient" in line:
+                    gradient_cart = []
+                    if (3*self.num_atoms)/5 >= 1:
+                        if (3*self.num_atoms) % 5 != 0:
+                            num_of_lines = int(3*self.num_atoms / 5 + 1)
+                        else:
+                            num_of_lines = int(3*self.num_atoms / 5)
+                    else:
+                        num_of_lines = 1    
+                    for i in range(0,num_of_lines,1):
+                        gradient_cart.extend(next(file).split())
+                    gradient_cart = np.reshape(gradient_cart, (3*self.num_atoms,1))
+                    self.gradient_cart = np.asarray(gradient_cart, dtype=float)
+                    
+                if "Cartesian Force Constants" in line:
+                    lower_triangle = []
+                    hessian_cart = np.zeros((3*self.num_atoms,3*self.num_atoms))
+                    triangular_dim = triangular_number(3*self.num_atoms)
+                    if triangular_dim/5 >= 1:
+                        if triangular_dim % 5 != 0:
+                            num_of_lines = int(triangular_dim / 5 + 1)
+                        else:
+                            num_of_lines = int(triangular_dim / 5)
+                    else:
+                        num_of_lines = 1
+                    for i in range(0,num_of_lines,1):
+                        lower_triangle.extend(next(file).split())
+                    
+                    hessian_cart = triangle_to_square(lower_triangle)
+                    for i in range(3*self.num_atoms):
+                        for j in range(3*self.num_atoms):
+                            hessian_cart[i][j] = hessian_cart[j][i]
+                    self.hessian_cart = hessian_cart
+                    
+        file.close()
 
 
 

@@ -1,5 +1,6 @@
 import numpy as np
 import output
+import tools
 
 def vector(A, B):
     vector = np.subtract(A,B)
@@ -239,18 +240,67 @@ def get_bmat_and_cmat(internal_coordinates,      # supplied by a definition file
     return bmat,cmat
 
 
-def gf_freqs(cart_hess, mass_matrix, bmat):
-    u=np.linalg.inv(mass_matrix)
-    GF_G = np.matmul(np.matmul(bmat,u),bmat.T)
-    A = np.matmul(np.matmul(u,bmat.T),np.linalg.inv(GF_G))
-    f = np.matmul(np.matmul(A.T,cart_hess),A)
-    fval,fvec=np.linalg.eig(np.matmul(GF_G,f))
-    idx=fval.argsort()
-    fval = fval[idx]
-    fvec = fvec[:,idx]
-    return fval,fvec
+# def gf_freqs(cart_hess, mass_matrix, bmat, rot_sym):
+#     u=np.linalg.inv(mass_matrix)
+#     GF_G = np.matmul(np.matmul(bmat,u),bmat.T)
+    
+#     ## Remove redundancies from the G matrix
+#     gval,gvec = np.linalg.eig(GF_G)
+#     idx=gval.argsort()
+#     idx=np.flip(idx)
+#     gval=gval[idx]
+#     gvec=gvec[:,idx]
+#     U=[]
+#     atoms=int(len(mass_matrix))
+#     if rot_sym != 1:
+#         for i in range(atoms-6):    # Non-linear molecule
+#             U.append(gvec[i])
+#     else:
+#         for i in range(atoms-5):    # Linear molecule
+#             U.append(gvec[i])
+#     U=np.asarray(U)
+#     U=np.real(U.T)
+#     bmat = np.matmul(U.T,bmat)
+#     GF_G = np.matmul(np.matmul(bmat,u),bmat.T)
+    
+#     A = np.matmul(np.matmul(u,bmat.T),np.linalg.inv(GF_G))
+#     f = np.matmul(np.matmul(A.T,cart_hess),A)
+#     fval,fvec=np.linalg.eig(np.matmul(GF_G,f))
+#     idx=fval.argsort()
+#     fval = fval[idx]
+#     fvec = fvec[:,idx]
+#     return fval,fvec
 
-def gf_proj_freqs(cart_hess, cart_grad, mass_matrix, bmat, cmat):
+def gf_freqs(cart_hess, mass_matrix, bmat, rot_sym):
+    u = np.linalg.inv(mass_matrix)
+    G = bmat.dot(u).dot(bmat.T)
+    G_inv = tools.get_generalized_inv_matrix(G)
+    A = u.dot(bmat.T).dot(G_inv)
+    f = A.T.dot(cart_hess).dot(A)
+    P = G.dot(G_inv)
+    f=P.dot(f).dot(P)
+    feigval,feigvec=np.linalg.eig(G.dot(f))
+    idx = np.flip(np.abs(np.real(feigval)).argsort())
+    feigval=feigval[idx]
+    feigvec=feigvec[idx]
+    fval=[]
+    fvec=[]
+    if rot_sym == 1:
+        for i in range(len(mass_matrix)-5):
+            fval.append(feigval[i])
+            fvec.append(feigvec[i])
+    else:
+        for i in range(len(mass_matrix)-6):
+            fval.append(feigval[i])
+            fvec.append(feigvec[i])
+    fval=np.asarray(fval)
+    fvec=np.asarray(fval)
+    fval=fval[fval.argsort()]
+    fvec=fvec[fval.argsort()]
+    return (fval, fvec)
+
+
+def gf_proj_freqs(cart_hess, cart_grad, mass_matrix, bmat, cmat, rot_sym):
     u=np.linalg.inv(mass_matrix)
     GF_G = np.matmul(np.matmul(bmat,u),bmat.T)
     A = np.matmul(np.matmul(u,bmat.T),np.linalg.inv(GF_G))
