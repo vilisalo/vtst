@@ -1,6 +1,5 @@
 import numpy as np
-
-
+import tools
 
 ##### THESE ARE ORCA RELATED FUNCTIONS #####
 def hessian_reader(hess_file):
@@ -74,7 +73,6 @@ def hessian_reader(hess_file):
     num_atoms=int(num_atoms)
     
     M_mat = np.zeros( (3*num_atoms,3*num_atoms), dtype = float )
-    W_mat = np.zeros( (3*num_atoms,3*num_atoms), dtype = float )
     mass_triples = [ coord[i,1] for i in range(num_atoms) for j in range(3)]
     mass_triples = np.asarray(mass_triples)
     mass_triples = mass_triples.astype(float)  
@@ -109,70 +107,206 @@ def grad_reader(grad_file):
     grad=np.reshape(grad, (3*int(num_atoms),1))
     return grad
 
+class opt_reader:
+    def __init__(self, opt_file):
+        with open(opt_file, 'r') as inp:
+            bonds_array=[]
+            angles_array=[]
+            dihedrals_array=[]
+            for line in inp:
+                if "$redundant_internals" in line:
+                    bonds,angles,dihedrals,impropers,cartesians = next(inp).split()
+                    self.bonds=int(bonds)
+                    self.angles=int(angles)
+                    self.dihedrals=int(dihedrals)
+                    for i in range(self.bonds):
+                        bonds_array.extend(next(inp).split()[:2])
+                    bonds_array = np.asarray(bonds_array, dtype=int)
+                    bonds_array = np.reshape(bonds_array, (self.bonds,int(len(bonds_array)/self.bonds)))
+                    bonds_array += 1
+                    self.bonds_array= bonds_array
+                    for i in range(self.angles):
+                        angles_array.extend(next(inp).split()[:3])
+                    angles_array = np.asarray(angles_array, dtype=int)
+                    angles_array = np.reshape(angles_array, (self.angles,int(len(angles_array)/self.angles)))
+                    angles_array += 1
+                    self.angles_array= angles_array
+                    for i in range(self.dihedrals):
+                        dihedrals_array.extend(next(inp).split()[:4])
+                    dihedrals_array = np.asarray(dihedrals_array, dtype=int)
+                    dihedrals_array = np.reshape(dihedrals_array, (self.dihedrals,int(len(dihedrals_array)/self.dihedrals)))
+                    dihedrals_array += 1
+                    self.dihedrals_array = dihedrals_array
+                    with open("internal_coordinates.txt", 'w') as f:
+                        for i in self.bonds_array:
+                            obj = ",".join(map(str,i))
+                            f.write(obj+"\n")
+                        for i in self.angles_array:
+                            obj = ",".join(map(str,i))
+                            f.write(obj+"\n")    
+                        for i in self.dihedrals_array:
+                            obj = ",".join(map(str,i))
+                            f.write(obj+"\n")
+                        f.close()
 
-def b_matrix_reader(opt_file):
-    with open(opt_file, 'r') as inp:
-        for line in inp:
-            if not "$bmatrix" in line: # Flag for the b-matrix group
-                continue
-            else:
-                for data in inp:
-                    ##--- Important Parameters                 
-                    bmat_size = data.split()
-                    bmat_size = np.asarray(bmat_size)
-                    bmat_size = bmat_size.astype(int)
-                    n6_sets = bmat_size[1]//6 # Number of 6 columns sets. 
-                    rest = bmat_size[1]%6
-                    if rest == 0:
-                        n6_sets = n6_sets-1 # If the size is divisible by 6, then the sets would be larger.
-                        rest = 6
-                    ## Create the BMATRIX array
-                    bmat_data = np.zeros((bmat_size[0],bmat_size[1]+1))
-                    ## Write the number of the output line in the first element of the bmat_data matrix
-                    for n_line in range(bmat_size[0]):
-                        bmat_data[n_line][0] = n_line+1
-                    next(inp) # Jump the second line.
-                    break
+#### ORCA PARSER ####
 
-                #for data in inp: # Jump the second line (improve this)
-                #    break
-                count = 0
-                while count <= n6_sets:
-                    count2 = 0
-                    ## First get the data from all sets of 6 columns except the last one if rest
-                    # is not zero.
-                    if count != n6_sets:
-                        for data in inp:
-                            columns = [ int(num) for num in range(count*6,(count)*6+6) ]
-                            data = data.split()
-                            n_line = int(data[0])
-                            if  count2 >= bmat_size[0]:
-                                break
-                            for i in range(6):
-                                j = columns[i] + 1
-                                bmat_data[n_line][j] = float(data[i+1])
-                            count2 += 1
-                    ## This is the condition for the last sets of column that will not be zero
-                    # if the size of the BMAT matrix is not divisible by 6.
+class orca_parser:
+    def __init__(self,filename):
+        self.filename = filename
+        self.opt_file = True ### if the opt file is not found, this is reset to False
+        grad_file = str(self.filename)+".engrad"
+        hess_file = str(self.filename)+".hess"
+        opt_file = str(self.filename)+".opt"
+        coord=[]
+        
+        try:
+            with open(hess_file, 'r') as inp:
+                for line in inp:
+                    if not "$hessian" in line:
+                        continue
                     else:
                         for data in inp:
-                            columns = [ int(num) for num in range(count*6,(count)*6+rest) ]
-                            if data.strip() == '':
-                                break
-                            data = data.split()
-                            n_line = int(data[0])
-                            if  count2 >= bmat_size[0]:     # CHECK THIS
-                                break
-                            for i in range(rest):
-                                j = columns[i] + 1
-                                bmat_data[n_line][j] = float(data[i+1])
-                            count2 += 1
-                    count += 1                  
-    
-    bmat_data = np.delete(bmat_data, 0, 1)
-    return (bmat_data)
+                            hess_size = int(data.strip())
+                            n5_sets = hess_size//5
+                            rest = hess_size%5
+                            if rest == 0:
+                                n5_sets = n5_sets-1
+                                rest = 5
+                            hess_data = np.zeros((hess_size,hess_size+1))
+                            for n_line in range(hess_size):
+                                hess_data[n_line][0] = n_line+1
+                            next(inp)
+                            break
+                        count = 0
+                        while count <= n5_sets:
+                            count2 = 0
+                            if count != n5_sets:
+                                for data in inp:
+                                    columns = [ int(num) for num in range(count*5,(count)*5+5) ]
+                                    data = data.split()
+                                    n_line = int(data[0])
+                                    if  count2 >= hess_size:
+                                        break
+                                    for i in range(5):
+                                        j = columns[i] + 1
+                                        hess_data[n_line][j] = float(data[i+1])
+                                    count2 += 1
+                            else:
+                                for data in inp:
+                                    columns = [ int(num) for num in range(count*5,(count)*5+rest) ]
+                                    if data.strip() == '':
+                                        break
+                                    data = data.split()
+                                    n_line = int(data[0])
+                                    if  count2 >= hess_size:
+                                        break
+                                    for i in range(rest):
+                                        j = columns[i] + 1
+                                        hess_data[n_line][j] = float(data[i+1])
+                                    count2 += 1
+                            count += 1                  
+                    for line in inp:
+                        if not "$atoms" in line:
+                            continue
+                        num_atoms = inp.readline()
+                        for line in range(int(num_atoms)):
+                            line1=inp.readline()
+                            atom,mass,x,y,z = line1.split()
+                            coord.append([atom, float(mass), float(x), float(y), float(z)])
+            coord=np.asarray(coord)
+            hess_data = np.delete(hess_data, 0, 1)
+            num_atoms=int(num_atoms)
+            
+            M_mat = np.zeros( (3*num_atoms,3*num_atoms), dtype = float )
+            mass_triples = [ coord[i,1] for i in range(num_atoms) for j in range(3)]
+            mass_triples = np.asarray(mass_triples)
+            mass_triples = mass_triples.astype(float)  
+            for i in range(len(mass_triples)):
+                M_mat[i,i] = mass_triples[i]
+            self.mass_matrix = np.asarray(M_mat, dtype=float)
+            self.atoms = coord[:,0]
+            self.masses = np.asarray(coord[:,1], dtype=float)
+            self.hessian_cart = np.asarray(hess_data, dtype=float)
+            self.coord = np.asarray(coord[:,2:], dtype=float)
+            inp.close()
+        except FileNotFoundError():
+            print("*.hess file not found.")
 
-####################################################################
+        try:
+            grad=[]
+            with open(grad_file, 'r') as inp:
+                for line in inp:
+                    if not "# Number of atoms" in line:
+                        continue
+                    inp.readline()
+                    num_atoms = inp.readline()
+            with open(grad_file, 'r') as inp:
+                for line in inp:
+                    if not "# The current gradient" in line: # Flag for the start of Gradient block
+                        continue
+                    inp.readline()
+                    for i in range(3*int(num_atoms)):
+                        N=inp.readline()
+                        N=N.lstrip()
+                        N=N.rstrip()
+                        N=float(N)
+                        grad.append(N)
+                grad=np.asarray(grad)
+                grad=np.reshape(grad, (3*int(num_atoms),1))
+                self.gradient_cart = grad
+        except FileNotFoundError:
+            print("*.engrad file not found.")
+            
+        try:
+            with open(opt_file, 'r') as inp:
+                bonds_array=[]
+                angles_array=[]
+                dihedrals_array=[]
+                for line in inp:
+                    if "$redundant_internals" in line:
+                        bonds,angles,dihedrals,impropers,cartesians = next(inp).split()
+                        self.bonds=int(bonds)
+                        self.angles=int(angles)
+                        self.dihedrals=int(dihedrals)
+                        for i in range(self.bonds):
+                            bonds_array.extend(next(inp).split()[:2])
+                        bonds_array = np.asarray(bonds_array, dtype=int)
+                        bonds_array = np.reshape(bonds_array, (self.bonds,int(len(bonds_array)/self.bonds)))
+                        bonds_array += 1
+                        self.bonds_array= bonds_array
+                        
+                        if self.angles != 0:
+                            for i in range(self.angles):
+                                angles_array.extend(next(inp).split()[:3])
+                            angles_array = np.asarray(angles_array, dtype=int)
+                            angles_array = np.reshape(angles_array, (self.angles,int(len(angles_array)/self.angles)))
+                            angles_array += 1
+                            self.angles_array= angles_array
+                            
+                        if self.dihedrals != 0:    
+                            for i in range(self.dihedrals):
+                                dihedrals_array.extend(next(inp).split()[:4])
+                            dihedrals_array = np.asarray(dihedrals_array, dtype=int)
+                            dihedrals_array = np.reshape(dihedrals_array, (self.dihedrals,int(len(dihedrals_array)/self.dihedrals)))
+                            dihedrals_array += 1
+                            self.dihedrals_array = dihedrals_array
+                        with open("internal_coordinates.txt", 'w') as f:
+                            for i in self.bonds_array:
+                                obj = ",".join(map(str,i))
+                                f.write(obj+"\n")
+                            if self.angles != 0:
+                                for i in self.angles_array:
+                                    obj = ",".join(map(str,i))
+                                    f.write(obj+"\n")    
+                            if self.dihedrals != 0:
+                                for i in self.dihedrals_array:
+                                    obj = ",".join(map(str,i))
+                                    f.write(obj+"\n")
+                            f.close()
+        except FileNotFoundError:
+            print("*.opt file not found.")
+            self.opt_file = False
 
 ###### THESE ARE GAUSSIAN RELATED FUNCTIONS #######
 
@@ -317,5 +451,7 @@ def triangle_to_square(triangle):
     out = np.zeros((n,n),dtype=float)
     out[mask] = triangle
     return out
+
+
+
     
- 

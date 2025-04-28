@@ -1,6 +1,9 @@
 import warnings
 import numpy as np
 import scipy
+import gf_method
+pm_to_bohr = 0.0188972599
+
 
 def get_generalized_inv_matrix(matrix):
     u,s,vt = np.linalg.svd(matrix)
@@ -134,3 +137,98 @@ def get_rot_const_from_I(Ieigval):
     Ieigval = Ieigval*bohr_to_meter**2
     B = h/(8*np.pi**2*c*Ieigval)*1000*NA
     return B
+
+
+class get_redundant_internals:
+    def __init__(self,coord,atoms):
+
+        #### Bonds
+        if len(atoms) >= 2:
+            bonds=[]
+            cov_rad=[]
+            for i in range(len(atoms)):
+                cov_rad.append(get_covalent_radius(atoms[i]))
+            cov_rad = np.asarray(cov_rad, dtype=float)
+            
+            for i in range(len(coord)):
+                for j in range(len(coord)):
+                    if i != j and i < j:
+                        if gf_method.length(coord[i],coord[j]) <= 1.3*cov_rad[i]+cov_rad[j]:
+                            bonds.append([i+1,j+1]) 
+            bonds=np.asarray(bonds, dtype=int)
+            self.bonds = bonds
+        #### Angles
+        if len(bonds) >= 2:
+            angles=[]
+            for i in range(len(bonds)):
+                for j in range(len(bonds)):
+                    if i != j and i < j:
+                        if any(item in bonds[i] for item in bonds[j]) == True:
+                            order = np.nonzero(np.in1d(bonds[i],bonds[j]))[0][0]
+                            if order == 0:
+                                concatenated = np.concatenate((np.flip(bonds[i]),bonds[j]))
+                                idx=np.unique(concatenated, return_index=True)[1]
+                                angles.append([concatenated[i] for i in sorted(idx)])
+                            if order == 1:
+                                concatenated = np.concatenate((bonds[i],bonds[j]))
+                                idx=np.unique(concatenated, return_index=True)[1]
+                                angles.append([concatenated[i] for i in sorted(idx)]) 
+            angles=np.asarray(angles, dtype=int)
+            self.angles = angles
+        #### Proper dihedrals
+        if len(angles) >= 2:
+            dihedrals=[]
+            for i in range(len(angles)):
+                for j in range(len(angles)):
+                    if i != j and i < j:
+                        if any(item in angles[i] for item in angles[j]) == True:
+                                if len(np.nonzero(np.in1d(angles[i],angles[j]))[0]) == 2:
+                                    if any(angles[i] -angles[j] == 0) == False:
+                                        concatenated=np.concatenate((np.flip(angles[i]),angles[j]))
+                                        idx=np.unique(concatenated, return_index=True)[1]
+                                        dihedrals.append([concatenated[i] for i in sorted(idx)])
+                                    if np.count_nonzero(angles[i]-angles[j] == 0) == 2:
+                                        if np.nonzero(np.in1d(angles[i],angles[j]))[0][0] == 0:
+                                            dihedrals.append((angles[i][0],angles[i][2],angles[j][2],angles[i][1]))
+                                            #print(angles[i][0],angles[i][2],angles[j][2],angles[i][1])
+                
+            dihedrals=np.asarray(dihedrals, dtype=int)            
+            self.dihedrals = dihedrals    
+                #for k in range(len(bonds)):
+                #    if i != j and j != k and i != k and i < j:
+                #        if any(item in bonds[i] for item in bonds[j]) == True and any(item in bonds[j] for item in bonds[k]) == True:
+                #            print(i+1,j+1,k+1)
+
+    
+
+
+def get_covalent_radius(atom):
+    for i in atom_data:     
+        if str(i[0]) == atom or i[1] == atom.capitalize(): 
+            return i[5]
+    raise KeyError("Element is not implemented.")
+
+atom_data = [
+    # atomic number, symbols, names, masses, bohr radius, covalent radius
+    [  0, "X", "X",            0.000000, 0.000, 0*pm_to_bohr],  # 0
+    [  1, "H", "Hydrogen",     1.007940, 0.324, 31*pm_to_bohr],  # 1
+    [  2, "He", "Helium",      4.002602, 0.000, 28*pm_to_bohr],  # 2
+    [  3, "Li", "Lithium",     6.941000, 1.271, 128*pm_to_bohr],  # 3
+    [  4, "Be", "Beryllium",   9.012182, 0.927, 96*pm_to_bohr],  # 4
+    [  5, "B", "Boron",       10.811000, 0.874, 84*pm_to_bohr],  # 5
+    [  6, "C", "Carbon",      12.010700, 0.759, 76*pm_to_bohr],  # 6
+    [  7, "N", "Nitrogen",    14.006700, 0.706, 71*pm_to_bohr],  # 7
+    [  8, "O", "Oxygen",      15.999400, 0.678, 66*pm_to_bohr],  # 8
+    [  9, "F", "Fluorine",    18.998403, 0.568, 57*pm_to_bohr],  # 9
+    [ 10, "Ne", "Neon",       20.179700, 0.000, 58*pm_to_bohr],  # 10
+    [ 11, "Na", "Sodium",     22.989769, 1.672, 166*pm_to_bohr],  # 11
+    [ 12, "Mg", "Magnesium",  24.305000, 1.358, 141*pm_to_bohr],  # 12
+    [ 13, "Al", "Aluminium",  26.981539, 1.218, 121*pm_to_bohr],  # 13
+    [ 14, "Si", "Silicon",    28.085500, 1.187, 111*pm_to_bohr],  # 14
+    [ 15, "P", "Phosphorus",  30.973762, 1.105, 107*pm_to_bohr],  # 15
+    [ 16, "S", "Sulfur",      32.065000, 1.045, 105*pm_to_bohr],  # 16
+    [ 17, "Cl", "Chlorine",   35.453000, 1.006, 102*pm_to_bohr],  # 17
+    [ 18, "Ar", "Argon",      39.948000, 0.000, 106*pm_to_bohr],  # 18
+]
+
+    

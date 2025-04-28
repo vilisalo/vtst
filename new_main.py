@@ -1,6 +1,6 @@
 import numpy as np
 import sys
-from input_reader import hessian_reader, grad_reader, gaussian_parser
+from input_reader import gaussian_parser, orca_parser
 from inertia_and_com import inertia_tensor 
 import output
 import thermo_new as thermo
@@ -11,7 +11,7 @@ joule_to_hartree=229371044869059970
 kb=1.380649E-23
 bohr_to_ang=0.529177249
 
-use_qrrho = True
+use_qrrho = False
 
 #### This currently only works for ORCA ####
 class initialize:   # This initializes the required information from the *.hess and *.engrad files into instance variables
@@ -23,20 +23,25 @@ class initialize:   # This initializes the required information from the *.hess 
     """
     def __init__(self, filename, internal_coordinates, mult, temp=298.15, pressure=1, omega_0=100):
         self.filename = filename
-        self.internal_coordinates = internal_coordinates
+        self.internal_coordinates = "internal_coordinates.txt"
         self.mult = mult
         self.temp = temp
         self.pressure = pressure
         self.omega_0 = omega_0
         self.stationary = True ## This defaults to True, but if gradient is loaded, then the value is checked with criterion.
         self.proj_modes = 0
+        parse = orca_parser(self.filename)
+        if parse.opt_file == False:
+            self.internal_coordinates = internal_coordinates
+        else:
+            self.internal_coordinates = "internal_coordinates.txt"
         try:
-            self.atoms = np.array(hessian_reader(self.filename+".hess")[1][:,0], dtype=str)
-            self.masses = np.array(hessian_reader(self.filename+".hess")[1][:,1], dtype=float)
-            self.coord = np.array(hessian_reader(self.filename+".hess")[1][:,2:], dtype=float)
+            self.atoms = parse.atoms
+            self.masses = parse.masses
+            self.coord = parse.coord
+            self.mass_matrix = parse.mass_matrix
+            self.hessian_cart = parse.hessian_cart
             self.com = np.array(self.coord) - tools.get_center_mass(self.coord, self.masses)
-            self.hessian_cart = np.array(hessian_reader(self.filename+".hess")[2], dtype=float)
-            self.mass_matrix = np.array(hessian_reader(self.filename+".hess")[3], dtype=float)
             self.Ieigval, self.Ieigvec, self.B = inertia_tensor(self.com, self.masses)
             self.principal_axis_coordinates = np.matmul(np.linalg.inv(self.Ieigvec),self.com.T).T
             self.pg = pg.PointGroup(self.coord, self.atoms, self.masses).get_point_group()
@@ -44,15 +49,17 @@ class initialize:   # This initializes the required information from the *.hess 
             self.rot_sym = thermo.rotsym(self.Ieigval)
         except FileNotFoundError:
             print("The *.hess file is not found.")
+    
         try:
             self.bmat, self.cmat = gf_method.get_bmat_and_cmat(self.internal_coordinates, self.com)
-            self.fval, self.fvec = gf_method.gf_freqs(self.hessian_cart, self.mass_matrix, self.bmat)
+            self.fval, self.fvec = gf_method.gf_freqs(self.hessian_cart, self.mass_matrix, self.bmat, self.rot_sym)
             self.freq = output.frequencies(self.fval)
         except:
             print("Something is wrong with the internal coordinate definitions.")
+
         try:
-            self.gradient_cart = np.array(grad_reader(self.filename+".engrad"), dtype=float)
-            self.fval_p, self.fvec_p = gf_method.gf_proj_freqs(self.hessian_cart, self.gradient_cart, self.mass_matrix, self.bmat, self.cmat)
+            self.gradient_cart = parse.gradient_cart
+            self.fval_p, self.fvec_p = gf_method.gf_proj_freqs(self.hessian_cart, self.gradient_cart, self.mass_matrix, self.bmat, self.cmat, self.rot_sym)
             self.freq_p = output.frequencies(self.fval_p)
             if np.max(np.abs(self.gradient_cart)) > 0.001:
                 self.stationary = False
@@ -77,7 +84,7 @@ class initialize:   # This initializes the required information from the *.hess 
         finally:
             print()
 ###################################################################################################################################
-
+#%%
 class initialize1:   # THIS GAUSSIAN TEST
     """
     The initialize class currently only support ORCA files. The required files for full operationality are the *.hess, *.engrad files, and a internal coordinate definitions file.
