@@ -156,7 +156,12 @@ class get_redundant_internals:
                         if gf_method.length(coord[i],coord[j]) <= 1.3*cov_rad[i]+cov_rad[j]:
                             bonds.append([i+1,j+1]) 
             bonds=np.asarray(bonds, dtype=int)
-            self.bonds = bonds
+            
+            
+            
+            
+        
+
         #### Angles
         if len(bonds) >= 2:
             angles=[]
@@ -172,9 +177,8 @@ class get_redundant_internals:
                             if order == 1:
                                 concatenated = np.concatenate((bonds[i],bonds[j]))
                                 idx=np.unique(concatenated, return_index=True)[1]
-                                angles.append([concatenated[i] for i in sorted(idx)]) 
+                                angles.append([concatenated[i] for i in sorted(idx)])
             angles=np.asarray(angles, dtype=int)
-            self.angles = angles
         #### Proper dihedrals
         if len(angles) >= 2:
             dihedrals=[]
@@ -194,13 +198,22 @@ class get_redundant_internals:
                 
             dihedrals=np.asarray(dihedrals, dtype=int)            
             self.dihedrals = dihedrals    
-                #for k in range(len(bonds)):
-                #    if i != j and j != k and i != k and i < j:
-                #        if any(item in bonds[i] for item in bonds[j]) == True and any(item in bonds[j] for item in bonds[k]) == True:
-                #            print(i+1,j+1,k+1)
-
-    
-
+        
+        
+        self.bonds = bonds
+        #self.bonds = np.hstack((bonds, np.zeros((len(bonds),2), dtype=int)), dtype=int)
+        self.angles = angles
+        #self.angles = np.hstack((angles, np.zeros((len(angles),1), dtype=int)), dtype=int)
+            
+        try:    
+            if len(bonds) >= 2 and len(angles) >= 2:
+                self.int = np.vstack((self.bonds,self.angles,self.dihedrals))
+            if len(bonds) >= 2 and len(angles) < 2:
+                self.int = np.vstack((self.bonds,self.angles))
+            if len(bonds) < 2 and len(bonds) >= 1:
+                self.int = self.bonds
+        except ValueError:
+            print("Ill-defined internal coordinates")
 
 def get_covalent_radius(atom):
     for i in atom_data:     

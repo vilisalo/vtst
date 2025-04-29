@@ -21,9 +21,8 @@ class initialize:   # This initializes the required information from the *.hess 
               internal coordinates -> Currently supplied via a textfile, but will be improved to be read automatically from ORCA output file etc.
     Returns: atoms, masses, coord, center-of-mass coordinates, Cartesian Hessian, matrix of atomic mass triplets, inertia eigenvalues and eigenvectors, rotational constants in cm-1, point group, rotational symmetry number.
     """
-    def __init__(self, filename, internal_coordinates, mult, temp=298.15, pressure=1, omega_0=100):
+    def __init__(self, filename, mult, temp=298.15, pressure=1, omega_0=100):
         self.filename = filename
-        self.internal_coordinates = "internal_coordinates.txt"
         self.mult = mult
         self.temp = temp
         self.pressure = pressure
@@ -31,10 +30,8 @@ class initialize:   # This initializes the required information from the *.hess 
         self.stationary = True ## This defaults to True, but if gradient is loaded, then the value is checked with criterion.
         self.proj_modes = 0
         parse = orca_parser(self.filename)
-        if parse.opt_file == False:
-            self.internal_coordinates = internal_coordinates
-        else:
-            self.internal_coordinates = "internal_coordinates.txt"
+        self.internal_coordinates = "internal_coordinates.txt"
+
         try:
             self.atoms = parse.atoms
             self.masses = parse.masses
@@ -72,8 +69,8 @@ class initialize:   # This initializes the required information from the *.hess 
                     self.proj_modes = 1
                 else:
                     self.proj_modes = 0
-        except FileNotFoundError:
-            print("The *.engrad file is not found.")
+        except AttributeError:
+                None
         try:
             self.thermochemistry = thermo.get_thermochemistry(self.freq, self.proj_modes, self.mult, self.masses, self.B, self.rot_sym, self.sn, use_qrrho, self.temp, self.pressure, self.omega_0)
             self.ZPE = self.thermochemistry[0]
