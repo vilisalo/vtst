@@ -3,11 +3,11 @@ import input_reader
 import gf_method
 import tools
 
-f = input_reader.orca_parser("h2o")
+f = input_reader.orca_parser("h2o-h2o-h2o2")
 int_coord = tools.get_redundant_internals(f.coord, f.atoms) 
 
 fragments=[]
-test=int_coord.bonds
+test=bonds
 fragments.extend((test[0][0],test[0][1]))
 test=np.delete(test, 0, axis=0)
 test1=[]

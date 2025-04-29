@@ -156,7 +156,11 @@ class get_redundant_internals:
                         if gf_method.length(coord[i],coord[j]) <= 1.3*cov_rad[i]+cov_rad[j]:
                             bonds.append([i+1,j+1]) 
             bonds=np.asarray(bonds, dtype=int)
-            
+            #### NEW ADDITION, NOT TESTED PROPERLY
+            intramolecular_bonds = get_connectivity(bonds, coord)
+            if len(intramolecular_bonds) != 0:
+                bonds = np.append(bonds, intramolecular_bonds, axis=0)
+
             
             
             
@@ -200,10 +204,10 @@ class get_redundant_internals:
             self.dihedrals = dihedrals    
         
         
-        self.bonds = bonds
-        #self.bonds = np.hstack((bonds, np.zeros((len(bonds),2), dtype=int)), dtype=int)
-        self.angles = angles
-        #self.angles = np.hstack((angles, np.zeros((len(angles),1), dtype=int)), dtype=int)
+        #self.bonds = bonds
+        self.bonds = np.hstack((bonds, np.zeros((len(bonds),2), dtype=int)), dtype=int)
+        #self.angles = angles
+        self.angles = np.hstack((angles, np.zeros((len(angles),1), dtype=int)), dtype=int)
             
         try:    
             if len(bonds) >= 2 and len(angles) >= 2:
@@ -220,6 +224,44 @@ def get_covalent_radius(atom):
         if str(i[0]) == atom or i[1] == atom.capitalize(): 
             return i[5]
     raise KeyError("Element is not implemented.")
+
+def get_connectivity(bonds, coord):
+    fragments=[]
+    test=bonds
+    fragments.extend((test[0][0],test[0][1]))
+    test=np.delete(test, 0, axis=0)
+    test1=[]
+    all_fragments=[]
+    while len(test) != 0:
+      if len(test1) != len(test):
+        rows_to_delete=[]
+        test1=test
+        for i in range(len(test)):
+          if np.in1d(fragments,test[i]).any() == True:
+            fragments = np.unique(np.concatenate((fragments,test[i])))
+            rows_to_delete.append(i)
+        test = np.delete(test, rows_to_delete, axis=0)
+      if len(test1) == len(test) or len(test) == 0:
+        all_fragments.append(fragments)
+        fragments = []
+        if len(test) != 0:
+          fragments.extend((test[0][0],test[0][1]))
+          test=np.delete(test, 0, axis=0)
+          test1=[]
+
+    new_bonds=[]
+    for i in range(len(all_fragments)):
+        for j in range(len(all_fragments)):
+            if i != j and i < j:
+                temporary_storage=[]
+                all_intramolecular_bonds = np.stack(np.meshgrid(all_fragments[i], all_fragments[j]), -1).reshape(-1, 2)
+                for k in range(len(all_intramolecular_bonds)):
+                    bond_length = gf_method.length(coord[all_intramolecular_bonds[k][0]-1], coord[all_intramolecular_bonds[k][1]-1])
+                    temporary_storage.append((bond_length, all_intramolecular_bonds[k][0], all_intramolecular_bonds[k][1]))
+                new_bonds.append(min(temporary_storage)[1:])
+
+    return new_bonds
+
 
 atom_data = [
     # atomic number, symbols, names, masses, bohr radius, covalent radius
