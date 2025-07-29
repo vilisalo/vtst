@@ -1,18 +1,24 @@
 import warnings
 import numpy as np
-import scipy
 import gf_method
 pm_to_bohr = 0.0188972599
 
 
-def get_generalized_inv_matrix(matrix):
-    u,s,vt = np.linalg.svd(matrix)
-    r = np.linalg.matrix_rank(matrix)
-    s[:r] = 1/s[:r]
-    m,n = matrix.shape
-    s_inv = scipy.linalg.diagsvd(s,m,n).T
-    matrix_inv = vt.T.dot(s_inv).dot(u.T)
-    return matrix_inv
+def get_G_matrix_and_G_inv_matrix(matrix, tolerance=1e-7):
+    U,S,VT = np.linalg.svd(matrix)
+    S_inv=[]
+    for i in range(len(S)):
+        if S[i] < tolerance:
+            S[i] = 0
+            S_inv.append(0)
+        else:
+            S_inv.append(1/(S[i]))
+    S_inv=np.asarray(S_inv, dtype=float)
+    S=np.diag(S)
+    S_inv=np.diag(S_inv)
+    G = U.dot(S).dot(VT)
+    G_inv = VT.T.dot(S_inv).dot(U.T)
+    return G,G_inv
     
 def get_center_mass(coord, masses):
     cbye = [np.dot(masses[i], coord[i]) for i in range(len(coord))]
@@ -161,11 +167,6 @@ class get_redundant_internals:
             if len(intramolecular_bonds) != 0:
                 bonds = np.append(bonds, intramolecular_bonds, axis=0)
 
-            
-            
-            
-        
-
         #### Angles
         if len(bonds) >= 2:
             angles=[]
@@ -183,7 +184,8 @@ class get_redundant_internals:
                                 idx=np.unique(concatenated, return_index=True)[1]
                                 angles.append([concatenated[i] for i in sorted(idx)])
             angles=np.asarray(angles, dtype=int)
-        #### Proper dihedrals
+            
+        #### Dihedrals and improper torsions
         if len(angles) >= 2:
             dihedrals=[]
             for i in range(len(angles)):
@@ -191,15 +193,33 @@ class get_redundant_internals:
                     if i != j and i < j:
                         if any(item in angles[i] for item in angles[j]) == True:
                                 if len(np.nonzero(np.in1d(angles[i],angles[j]))[0]) == 2:
+                                    
+                                    ### This condition applies to proper dihedrals
                                     if any(angles[i] -angles[j] == 0) == False:
-                                        concatenated=np.concatenate((np.flip(angles[i]),angles[j]))
+                                        ### Permute atoms such that they match with linear bonding pattern
+                                        concatenated=np.concatenate((angles[i],angles[j]))
                                         idx=np.unique(concatenated, return_index=True)[1]
-                                        dihedrals.append([concatenated[i] for i in sorted(idx)])
+                                        trial_dihedral = np.array(([concatenated[i] for i in sorted(idx)]), dtype=int)
+                                        trial_dihedral = np.array(([trial_dihedral[0],trial_dihedral[1]], [trial_dihedral[1],trial_dihedral[2]], [trial_dihedral[2],trial_dihedral[3]]), dtype=int)                                        
+                                        if isSubset(trial_dihedral, bonds) == True:
+                                            dihedrals.append([concatenated[i] for i in sorted(idx)])
+                                        else:
+                                            concatenated=np.concatenate((np.flip(angles[i]),angles[j]))
+                                            idx=np.unique(concatenated, return_index=True)[1]
+                                            trial_dihedral = np.array(([concatenated[i] for i in sorted(idx)]))
+                                            trial_dihedral = np.array(([trial_dihedral[0],trial_dihedral[1]], [trial_dihedral[1],trial_dihedral[2]], [trial_dihedral[2],trial_dihedral[3]]))
+                                            if isSubset(trial_dihedral, bonds) == True:
+                                                dihedrals.append([concatenated[i] for i in sorted(idx)])
+                                            else:
+                                                concatenated=np.concatenate((angles[i],np.flip(angles[j])))
+                                                idx=np.unique(concatenated, return_index=True)[1]
+                                                trial_dihedral = np.array(([concatenated[item3] for item3 in sorted(idx)]))
+                                                dihedrals.append([concatenated[i] for i in sorted(idx)])
+                                    ### This bit finds the improper torsions        
                                     if np.count_nonzero(angles[i]-angles[j] == 0) == 2:
                                         if np.nonzero(np.in1d(angles[i],angles[j]))[0][0] == 0:
-                                            dihedrals.append((angles[i][0],angles[i][2],angles[j][2],angles[i][1]))
-                                            #print(angles[i][0],angles[i][2],angles[j][2],angles[i][1])
-                
+                                            dihedrals.append([angles[i][0],angles[i][2],angles[j][2],angles[i][1]])
+
             dihedrals=np.asarray(dihedrals, dtype=int)            
             self.dihedrals = dihedrals    
         
@@ -218,6 +238,19 @@ class get_redundant_internals:
                 self.int = self.bonds
         except ValueError:
             print("Ill-defined internal coordinates")
+        
+        #### Write the internal coordinate to a file, THIS IS TEMPORARY SOLUTION
+        with open("internal-coordinates.txt", "w") as f:
+            for i in self.int:
+                if i[2] == 0:
+                    obj = ",".join(map(str,i[:2]))
+                    f.write(obj+"\n")
+                if i[2] != 0 and i[3] == 0:
+                    obj = ",".join(map(str,i[:3]))
+                    f.write(obj+"\n")
+                if i[2] != 0 and i[3] != 0:
+                    obj = ",".join(map(str,i[:4]))
+                    f.write(obj+"\n")
 
 def get_covalent_radius(atom):
     for i in atom_data:     
@@ -248,6 +281,8 @@ def get_connectivity(bonds, coord):
           fragments.extend((test[0][0],test[0][1]))
           test=np.delete(test, 0, axis=0)
           test1=[]
+          if len(test) == 0:
+              all_fragments.append(fragments)
 
     new_bonds=[]
     for i in range(len(all_fragments)):
@@ -261,6 +296,19 @@ def get_connectivity(bonds, coord):
                 new_bonds.append(min(temporary_storage)[1:])
 
     return new_bonds
+
+
+def isSubset(input,bonds):
+    input=np.sort(input)
+    for i in range(len(input)):
+        found = False
+        for j in range(len(bonds)):
+            if np.array_equal(input[i],bonds[j]) == True:
+                found = True
+                break
+        if not found:
+            return False
+    return True
 
 
 atom_data = [

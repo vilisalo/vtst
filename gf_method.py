@@ -155,25 +155,51 @@ def dihed_b_tensor(i,j,k,l, atoms, com):
                     ## These take into account the presumed typo in the coefficient in front of
                     ## eighth term in Bakken&Helgaker 2002
                     #i-i,j,k,l terms
-                    b_tensor[3*(i-1)+a][3*(i-1)+b] =  first_term
-                    b_tensor[3*(i-1)+a][3*(j-1)+b] = -first_term + third_term + seventh_term
-                    b_tensor[3*(i-1)+a][3*(k-1)+b] = -third_term - seventh_term 
-                    b_tensor[3*(i-1)+a][3*(l-1)+b] = 0
+                    # b_tensor[3*(i-1)+a][3*(i-1)+b] =  first_term
+                    # b_tensor[3*(i-1)+a][3*(j-1)+b] = -first_term + third_term + seventh_term
+                    # b_tensor[3*(i-1)+a][3*(k-1)+b] = -third_term - seventh_term 
+                    # b_tensor[3*(i-1)+a][3*(l-1)+b] = 0
+                    # #j-i,j,k,l terms
+                    # b_tensor[3*(j-1)+a][3*(i-1)+b] = -first_term + third_term + seventh_term
+                    # b_tensor[3*(j-1)+a][3*(j-1)+b] =  first_term - 2*third_term - fifth_term + sixth_term - 2*seventh_term
+                    # b_tensor[3*(j-1)+a][3*(k-1)+b] =  third_term + fourth_term + fifth_term - sixth_term + seventh_term + eighth_term
+                    # b_tensor[3*(j-1)+a][3*(l-1)+b] = -fourth_term - eighth_term
+                    # #k-i,j,k,l terms
+                    # b_tensor[3*(k-1)+a][3*(i-1)+b] = -third_term - seventh_term
+                    # b_tensor[3*(k-1)+a][3*(j-1)+b] =  third_term + fourth_term + fifth_term - sixth_term + seventh_term + eighth_term
+                    # b_tensor[3*(k-1)+a][3*(k-1)+b] =  second_term - 2*fourth_term - fifth_term + sixth_term - 2*eighth_term
+                    # b_tensor[3*(k-1)+a][3*(l-1)+b] = -second_term + fourth_term + eighth_term
+                    # #l-i,j,k,l terms
+                    # b_tensor[3*(l-1)+a][3*(i-1)+b] = 0
+                    # b_tensor[3*(l-1)+a][3*(j-1)+b] = -fourth_term + eighth_term
+                    # b_tensor[3*(l-1)+a][3*(k-1)+b] = -second_term + fourth_term - eighth_term
+                    # b_tensor[3*(l-1)+a][3*(l-1)+b] =  second_term
+                    
+                    ## These are according to Bakken&Helgaker 2002 equations
+                    ## (LHS are wrong, see correct form below...)
+
+                    ##i-i,j,k,l terms
+                    b_tensor[3*(i-1):(3*(i-1)+3),3*(i-1):(3*(i-1)+3)] =  first_term
+                    b_tensor[3*(i-1):(3*(i-1)+3),3*(j-1):(3*(j-1)+3)] = -first_term + third_term + seventh_term
+                    b_tensor[3*(i-1):(3*(i-1)+3),3*(k-1):(3*(k-1)+3)] = -third_term - seventh_term 
+                    b_tensor[3*(i-1):(3*(i-1)+3),3*(l-1):(3*(l-1)+3)] = 0
                     #j-i,j,k,l terms
-                    b_tensor[3*(j-1)+a][3*(i-1)+b] = -first_term + third_term + seventh_term
-                    b_tensor[3*(j-1)+a][3*(j-1)+b] =  first_term - 2*third_term - fifth_term + sixth_term - 2*seventh_term
-                    b_tensor[3*(j-1)+a][3*(k-1)+b] =  third_term + fourth_term + fifth_term - sixth_term + seventh_term + eighth_term
-                    b_tensor[3*(j-1)+a][3*(l-1)+b] = -fourth_term - eighth_term
+                    b_tensor[3*(j-1):(3*(j-1)+3),3*(i-1):(3*(i-1)+3)] = -first_term + third_term + seventh_term + eighth_term
+                    b_tensor[3*(j-1):(3*(j-1)+3),3*(j-1):(3*(j-1)+3)] =  first_term - 2*third_term - fifth_term + sixth_term -2*seventh_term
+                    b_tensor[3*(j-1):(3*(j-1)+3),3*(k-1):(3*(k-1)+3)] =  third_term + fourth_term + fifth_term - sixth_term + seventh_term + eighth_term
+                    b_tensor[3*(j-1):(3*(j-1)+3),3*(l-1):(3*(l-1)+3)] = -fourth_term
                     #k-i,j,k,l terms
-                    b_tensor[3*(k-1)+a][3*(i-1)+b] = -third_term - seventh_term
-                    b_tensor[3*(k-1)+a][3*(j-1)+b] =  third_term + fourth_term + fifth_term - sixth_term + seventh_term + eighth_term
-                    b_tensor[3*(k-1)+a][3*(k-1)+b] =  second_term - 2*fourth_term - fifth_term + sixth_term - 2*eighth_term
-                    b_tensor[3*(k-1)+a][3*(l-1)+b] = -second_term + fourth_term + eighth_term
+                    b_tensor[3*(k-1):(3*(k-1)+3),3*(i-1):(3*(i-1)+3)] = -third_term - seventh_term + eighth_term
+                    b_tensor[3*(k-1):(3*(k-1)+3),3*(j-1):(3*(j-1)+3)] =  third_term + fourth_term - fifth_term - sixth_term + seventh_term + eighth_term
+                    b_tensor[3*(k-1):(3*(k-1)+3),3*(k-1):(3*(k-1)+3)] =  second_term - 2*fourth_term - fifth_term + sixth_term
+                    b_tensor[3*(k-1):(3*(k-1)+3),3*(l-1):(3*(l-1)+3)] = -second_term + fourth_term 
                     #l-i,j,k,l terms
-                    b_tensor[3*(l-1)+a][3*(i-1)+b] = 0
-                    b_tensor[3*(l-1)+a][3*(j-1)+b] = -fourth_term + eighth_term
-                    b_tensor[3*(l-1)+a][3*(k-1)+b] = -second_term + fourth_term - eighth_term
-                    b_tensor[3*(l-1)+a][3*(l-1)+b] =  second_term
+                    b_tensor[3*(l-1):(3*(l-1)+3),3*(i-1):(3*(i-1)+3)] = 0
+                    b_tensor[3*(l-1):(3*(l-1)+3),3*(j-1):(3*(j-1)+3)] = -fourth_term + eighth_term
+                    b_tensor[3*(l-1):(3*(l-1)+3),3*(k-1):(3*(k-1)+3)] = -second_term + fourth_term - eighth_term
+                    b_tensor[3*(l-1):(3*(l-1)+3),3*(l-1):(3*(l-1)+3)] =  second_term
+                    
+                    
                     
     return b_tensor
 
@@ -274,13 +300,13 @@ def get_bmat_and_cmat(internal_coordinates,      # supplied by a definition file
 def gf_freqs(cart_hess, mass_matrix, bmat, rot_sym):
     u = np.linalg.inv(mass_matrix)
     G = bmat.dot(u).dot(bmat.T)
-    G_inv = tools.get_generalized_inv_matrix(G)
+    G,G_inv = tools.get_G_matrix_and_G_inv_matrix(G)
     A = u.dot(bmat.T).dot(G_inv)
     f = A.T.dot(cart_hess).dot(A)
     P = G.dot(G_inv)
     f=P.dot(f).dot(P)
     feigval,feigvec=np.linalg.eig(G.dot(f))
-    idx = np.flip(np.abs(np.real(feigval)).argsort())
+    idx = np.flip(np.abs(feigval).argsort())
     feigval=feigval[idx]
     feigvec=feigvec[idx]
     fval=[]
@@ -302,44 +328,50 @@ def gf_freqs(cart_hess, mass_matrix, bmat, rot_sym):
 
 def gf_proj_freqs(cart_hess, cart_grad, mass_matrix, bmat, cmat, rot_sym):
     u=np.linalg.inv(mass_matrix)
-    GF_G = np.matmul(np.matmul(bmat,u),bmat.T)
-    A = np.matmul(np.matmul(u,bmat.T),np.linalg.inv(GF_G))
-    g = np.matmul(A.T, cart_grad)
-    f = np.matmul(np.matmul(A.T,cart_hess),A)
+    G = bmat.dot(u).dot(bmat.T)
+    G,G_inv = tools.get_G_matrix_and_G_inv_matrix(G)
+    A = u.dot(bmat.T).dot(G_inv)
+    f = A.T.dot(cart_hess).dot(A)
+    g = A.T.dot(cart_grad)
     for a in range(len(g)):
-        f = f - g[a]*np.matmul(np.matmul(A.T,cmat[a]),A) 
-    fval,fvec=np.linalg.eig(np.matmul(GF_G,f))
-    idx=fval.argsort()
-    fval = fval[idx]
-    fvec = fvec[:,idx]
-
+        f = f - g[a]*np.matmul(np.matmul(A.T,cmat[a]),A)
+    P=G.dot(G_inv)
+    f=P.dot(f).dot(P)
+    g=P.dot(g)
+    
     """
-    Construct a projector for the internal gradient
+    Construct a projector for the gradient
     p = gg.T / (g.T BuB.T g)
     """
-    p = np.matmul(g,g.T)/(np.matmul(np.matmul(g.T,GF_G),g))
+    p = (g.dot(g.T))/(g.T.dot(G).dot(g))
     I=np.eye(len(p))
-    """
-    The projection transformation generates projected hessian 
-    f_proj = (I-pBuB.T)f(I-BuB.Tp)
-    i.e., (pre)f(post)
-    """
-    pre = I-np.matmul(p,GF_G)
-    post = I-np.matmul(GF_G,p)
-    f_proj = np.matmul(np.matmul(pre,f),post)
+    pre = I-(p.dot(G))
+    post = I-(G.dot(p))    
+    f_proj = pre.dot(f).dot(post)
     """
     diagonalization of the Wilson GF matrix gives vibrations orthogonal
     to the internal gradient
     GF = GF_G * f_proj
     """
-    fval_p,fvec_p = np.linalg.eig(np.matmul(GF_G,f_proj))
-    idx=fval_p.argsort()
-    fval_p = fval_p[idx]
-    fvec_p = fvec_p[:,idx]
-    return fval_p,fvec_p
-
-
-
+    feigval,feigvec=np.linalg.eig(G.dot(f_proj))
+    idx = np.flip(np.abs(feigval).argsort())
+    feigval=feigval[idx]
+    feigvec=feigvec[idx]
+    fval=[]
+    fvec=[]
+    if rot_sym == 1:
+        for i in range(len(mass_matrix)-5):
+            fval.append(feigval[i])
+            fvec.append(feigvec[i])
+    else:
+        for i in range(len(mass_matrix)-6):
+            fval.append(feigval[i])
+            fvec.append(feigvec[i])
+    fval=np.asarray(fval)
+    fvec=np.asarray(fval)
+    fval=fval[fval.argsort()]
+    fvec=fvec[fval.argsort()]
+    return (fval, fvec)
 
 """
 This section deals with redundant internal coordinates.

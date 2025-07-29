@@ -1,4 +1,5 @@
 import numpy as np
+import os
 import sys
 from input_reader import gaussian_parser, orca_parser
 from inertia_and_com import inertia_tensor 
@@ -11,10 +12,30 @@ joule_to_hartree=229371044869059970
 kb=1.380649E-23
 bohr_to_ang=0.529177249
 
-use_qrrho = False
+use_qrrho = True
 
-#### This currently only works for ORCA ####
-class initialize:   # This initializes the required information from the *.hess and *.engrad files into instance variables
+
+##### MAIN PROGRAM STRUCTURE #####
+"""
+The main program 
+"""
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class initialize_orca:   # This initializes the required information from the *.hess and *.engrad files into instance variables
     """
     The initialize class currently only support ORCA files. The required files for full operationality are the *.hess, *.engrad files, and a internal coordinate definitions file.
     Requires: filename  -> the parent filename of the ORCA files, as in filename.hess, and filename.engrad.
@@ -30,8 +51,9 @@ class initialize:   # This initializes the required information from the *.hess 
         self.stationary = True ## This defaults to True, but if gradient is loaded, then the value is checked with criterion.
         self.proj_modes = 0
         parse = orca_parser(self.filename)
+        self.int = parse.int
         self.internal_coordinates = "internal_coordinates.txt"
-
+        
         try:
             self.atoms = parse.atoms
             self.masses = parse.masses
@@ -81,8 +103,8 @@ class initialize:   # This initializes the required information from the *.hess 
         finally:
             print()
 ###################################################################################################################################
-#%%
-class initialize1:   # THIS GAUSSIAN TEST
+
+class initialize_gaussian:   # THIS GAUSSIAN TEST
     """
     The initialize class currently only support ORCA files. The required files for full operationality are the *.hess, *.engrad files, and a internal coordinate definitions file.
     Requires: filename  -> the parent filename of the ORCA files, as in filename.hess, and filename.engrad.
@@ -91,18 +113,20 @@ class initialize1:   # THIS GAUSSIAN TEST
     """
     def __init__(self, filename, temp=298.15, pressure=1, omega_0=100):
         self.filename = filename
-        self.internal_coordinates = "internal_coordinates.txt"
         self.temp = temp
         self.pressure = pressure
         self.omega_0 = omega_0
         self.stationary = True ## This defaults to True, but if gradient is loaded, then the value is checked with criterion.
         self.proj_modes = 0
+
         try:
             parse = gaussian_parser(filename)
             self.atoms = parse.atoms
             self.mult = parse.mult
             self.masses = parse.masses
             self.coord = parse.coord
+            self.int = tools.get_redundant_internals(self.coord, self.atoms).int
+            self.internal_coordinates = "internal-coordinates.txt"
             self.com = self.coord - tools.get_center_mass(self.coord, self.masses)
             self.hessian_cart = parse.hessian_cart
             self.mass_matrix = parse.mass_matrix
@@ -150,30 +174,4 @@ class initialize1:   # THIS GAUSSIAN TEST
 
 
 
-#%%
 
-
-temp=np.array([298.15])
-pressure=1
-mult=3
-
-
-thermo.get_thermochemistry(freq, proj_modes, mult, mass, B, rot_sym, sn, qrrho)
-
-if proj_modes == 0:
-    print("Minimum energy point."," proj_modes = ",proj_modes)
-if proj_modes == 1:
-    print("Either reaction path or transition frequency projected in G calculation."," proj_modes = ",proj_modes)
-if proj_modes >= 2:
-    print("Two or more modes projected, make sure this is wanted."," proj_modes = ",proj_modes)
-
-if frequencies[0] == freq[0]:
-    print("Non-projected frequencies used for G.")
-if frequencies[0] == freq_p[0]:
-    print("Projected frequencies used for G.")
-
-print("Gibbs energy corrections at various T: (call temp for list of temperatures)")
-#print(G_corr)
-#print(' '.join(map(str,np.round(G_corr,8)))," Eh")
-#print(np.round(G_corr,8)," Eh")
-print(' '.join(map(str,np.round(G_corr,8))))

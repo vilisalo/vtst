@@ -257,9 +257,9 @@ class orca_parser:
             print("*.engrad file not found.")
         
         try:                
-            parse_redundants = tools.get_redundant_internals(self.coord, self.atoms)
+            self.int = tools.get_redundant_internals(self.coord, self.atoms).int
             with open("internal_coordinates.txt", "w") as f:
-                for i in parse_redundants.int:
+                for i in self.int:
                     if i[2] == 0:
                         obj = ",".join(map(str,i[:2]))
                         f.write(obj+"\n")
