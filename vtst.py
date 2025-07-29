@@ -8,6 +8,7 @@ import thermo_new as thermo
 import pg
 import tools
 import gf_method
+from tabulate import tabulate
 joule_to_hartree=229371044869059970
 kb=1.380649E-23
 bohr_to_ang=0.529177249
@@ -106,6 +107,7 @@ class initialize_gaussian:   # THIS GAUSSIAN TEST
             self.mult = parse.mult
             self.masses = parse.masses
             self.coord = parse.coord
+            self.energy = parse.energy
             self.int = tools.get_redundant_internals(self.coord, self.atoms).int
             self.internal_coordinates = "internal-coordinates.txt"
             self.com = self.coord - tools.get_center_mass(self.coord, self.masses)
@@ -149,7 +151,7 @@ class initialize_gaussian:   # THIS GAUSSIAN TEST
             self.S = self.thermochemistry[3]
             self.G = self.thermochemistry[4]
         finally:
-            print()
+            None
 
 
 
@@ -166,48 +168,93 @@ if use_gaussian == True and use_orca == True:
     print("Exiting...")
     sys.exit()
 
-output_list=[]
-
+#%%
 if use_gaussian == True:
-    with open("vtst-output.txt", "w") as f:
-        f.write("file","E","U","H","S","G","Stationary","\n")
-        if len(sys.argv) == 1:
-            print("VTST script running for all *.fchk files using default parameters : T=298.15K, p=1atm, qRRHO with omega=100 cm-1")
-            for file in os.listdir('.'):
-                if file.endswith(".fchk"):
-                    mol = initialize_gaussian(file)
-                    output = [file,mol.E,mol.U,mol.H,mol.S,mol.G,mol.stationary]
-                    f.write(output+"\n")
-        if len(sys.argv) > 1:
-            if (len(sys.argv)) == 2:
-                file = str(sys.argv[1])
-                print("VTST script running for ",file," using default parameters: T=298.15K, p=1atm, qRRHO with omega=100 cm-1")
-                mol = initialize_gaussian(file)
-                output = [file,mol.E,mol.U,mol.H,mol.S,mol.G,mol.stationary]
-                f.write(output+"\n")
-            if (len(sys.argv)) == 3:
-                file = str(sys.argv[1])
-                T = sys.argv[2]
-                mol = initialize_gaussian(file,temp=T)
-                output = [file,mol.E,mol.U,mol.H,mol.S,mol.G,mol.stationary]
-                f.write(output+"\n")
-            if (len(sys.argv)) == 3:
-                file = str(sys.argv[1])
-                T = sys.argv[2]
-                p = sys.argv[3]
-                print("VTST script running for ",file," using: T=",T,"K, p=",p,"atm, qRRHO with omega=100 cm-1")
-                mol = initialize_gaussian(file,temp=T,pressure=p)
-                output = [file,mol.E,mol.U,mol.H,mol.S,mol.G,mol.stationary]
-                f.write(output+"\n")
-            if (len(sys.argv)) == 4:
-                file = str(sys.argv[1])
-                T = sys.argv[2]
-                p = sys.argv[3]
-                omg = sys.argv[4]
-                print("VTST script running for ",file," using: T=",T,"K, p=",p,"atm, qRRHO with omega=",omg,"cm-1")
-                mol = initialize_gaussian(file,temp=T,pressure=p,omega_0=omg)
-                output = [file,mol.E,mol.U,mol.H,mol.S,mol.G,mol.stationary]
-                f.write(output+"\n")
-                
+    file_list=np.array([])
+    E_list=np.array([])
+    U_list=np.array([])
+    H_list=np.array([])
+    S_list=np.array([])
+    G_list=np.array([])
+    stationary_list=np.array([])
 
+    #f.write("filename"+"\t"+"E (Eh)"+"\t"+"U (Eh)"+"\t"+"H (Eh)"+"\t"+"S (Eh)"+"\t"+"G (Eh)"+"Stationary"+"\n")
+    if len(sys.argv) == 1:
+        print("VTST script running for all *.fchk files using default parameters: T=298.15K, p=1atm, qRRHO with omega=100 cm-1")
+        for file in os.listdir('.'):
+            if file.endswith(".fchk"):
+                mol = initialize_gaussian(file)
+                file_list = np.append(file_list, str(file))
+                E_list = np.append(E_list, mol.energy)
+                U_list = np.append(U_list, mol.U)
+                H_list = np.append(H_list, mol.H)
+                S_list = np.append(S_list, mol.S)
+                G_list = np.append(G_list, mol.G)
+                stationary_list = np.append(stationary_list, mol.stationary)
+                #f.write(str(file)+"\t"+str(mol.energy)+"\t"+str(mol.U)+"\t"+str(mol.H)+"\t"+str(mol.S)+"\t"+str(mol.G)+"\t"+str(mol.stationary)+"\n")
+    if len(sys.argv) > 1:
+       
+        if (len(sys.argv)) == 2:
+            file = str(sys.argv[1])
+            print("VTST script running for ",file," using default parameters: T=298.15K, p=1atm, qRRHO with omega=100 cm-1")
+            mol = initialize_gaussian(file)
+            file_list = np.append(file_list, str(file))
+            E_list = np.append(E_list, mol.energy)
+            U_list = np.append(U_list, mol.U)
+            H_list = np.append(H_list, mol.H)
+            S_list = np.append(S_list, mol.S)
+            G_list = np.append(G_list, mol.G)
+            stationary_list = np.append(stationary_list, mol.stationary)
+            #f.write(str(file)+"\t"+str(mol.energy)+"\t"+str(mol.U)+"\t"+str(mol.H)+"\t"+str(mol.S)+"\t"+str(mol.G)+"\t"+str(mol.stationary)+"\n")
+        
+        if (len(sys.argv)) == 3:
+            file = str(sys.argv[1])
+            T = sys.argv[2]
+            mol = initialize_gaussian(file,temp=T)
+            file_list = np.append(file_list, str(file))
+            E_list = np.append(E_list, mol.energy)
+            U_list = np.append(U_list, mol.U)
+            H_list = np.append(H_list, mol.H)
+            S_list = np.append(S_list, mol.S)
+            G_list = np.append(G_list, mol.G)
+            stationary_list = np.append(stationary_list, mol.stationary)
+            #f.write(str(file)+"\t"+str(mol.energy)+"\t"+str(mol.U)+"\t"+str(mol.H)+"\t"+str(mol.S)+"\t"+str(mol.G)+"\t"+str(mol.stationary)+"\n")
+
+        if (len(sys.argv)) == 3:
+            file = str(sys.argv[1])
+            T = sys.argv[2]
+            p = sys.argv[3]
+            print("VTST script running for ",file," using: T=",T,"K, p=",p,"atm, qRRHO with omega=100 cm-1")
+            mol = initialize_gaussian(file,temp=T,pressure=p)
+            file_list = np.append(file_list, str(file))
+            E_list = np.append(E_list, mol.energy)
+            U_list = np.append(U_list, mol.U)
+            H_list = np.append(H_list, mol.H)
+            S_list = np.append(S_list, mol.S)
+            G_list = np.append(G_list, mol.G)
+            stationary_list = np.append(stationary_list, mol.stationary)
+            #f.write(str(file)+"\t"+str(mol.energy)+"\t"+str(mol.U)+"\t"+str(mol.H)+"\t"+str(mol.S)+"\t"+str(mol.G)+"\t"+str(mol.stationary)+"\n")
+
+        if (len(sys.argv)) == 4:
+            file = str(sys.argv[1])
+            T = sys.argv[2]
+            p = sys.argv[3]
+            omg = sys.argv[4]
+            print("VTST script running for ",file," using: T=",T,"K, p=",p,"atm, qRRHO with omega=",omg,"cm-1")
+            mol = initialize_gaussian(file,temp=T,pressure=p,omega_0=omg)
+            file_list = np.append(file_list, str(file))
+            E_list = np.append(E_list, mol.energy)
+            U_list = np.append(U_list, mol.U)
+            H_list = np.append(H_list, mol.H)
+            S_list = np.append(S_list, mol.S)
+            G_list = np.append(G_list, mol.G)
+            stationary_list = np.append(stationary_list, mol.stationary)
+            #f.write(str(file)+"\t"+str(mol.energy)+"\t"+str(mol.U)+"\t"+str(mol.H)+"\t"+str(mol.S)+"\t"+str(mol.G)+"\t"+str(mol.stationary)+"\n")
+                
+output_list = np.stack([file_list.astype(str),E_list.astype(float),U_list.astype(float),H_list.astype(float),S_list.astype(float),G_list.astype(float),stationary_list.astype(str)],axis=1)
+print(tabulate(output_list,headers=["filename","E (Eh)","U (Eh)","H (Eh)","S (Eh/K)","G (Eh)","Stationary (True=1, False=0)"], tablefmt="rst", floatfmt=(".4f",".4f",".4f",".4f",".4f",".4f",".0f"), colalign=("left","left","left","left","left","left","left")))
+
+with open("output-vtst.out", "w") as f:
+    f.write(tabulate(output_list,headers=["filename","E (Eh)","U (Eh)","H (Eh)","S (Eh/K)","G (Eh)","Stationary (True=1, False=0)"], tablefmt="plain", floatfmt=(".10f",".10f",".10f",".10f",".10f",".10f",".0f"), colalign=("left","left","left","left","left","left","left")))
+print("Output written also to output-vtst.out file")
 

@@ -1,3 +1,4 @@
 # VTST
-Python project for VTST-type kinetics code. Currently supports ORCA 6.0.1. Gaussian 16 support will be added soon.
+
+Python project for VTST-type kinetics code. Currently Gaussian 16. ORCA 6 support will be added soon.
 

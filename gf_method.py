@@ -215,7 +215,7 @@ def get_bmat_and_cmat(internal_coordinates,      # supplied by a definition file
     while True:
         user_input = file.readline().split(',')
         if user_input == ['']:
-            print("Internal coordinates generated from Cartesian coordinates and connectivity information from",internal_coordinates)
+            #print("Internal coordinates generated from Cartesian coordinates and connectivity information from",internal_coordinates)
             break
         if len(user_input) == 2:
             bond = bonds_svectors(int(user_input[0]), int(user_input[1]), atoms, com)

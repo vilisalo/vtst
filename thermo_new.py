@@ -210,7 +210,7 @@ def S_r(rot_sym,temp,B,sn):
     return S_r
 
 def get_thermochemistry(freq,proj_modes,mult,mass,B,rot_sym,sn,qrrho,temp=298.15,pressure=1,omega_0=100):
-    print("Thermochemistry output at ",temp,"K temperature and ",pressure,"atm pressure.")
+    #print("Thermochemistry output at ",temp,"K temperature and ",pressure,"atm pressure.")
     
     ### Non-thermal contributions: ###
     zpe_value = ZPE(freq,proj_modes)
@@ -218,10 +218,10 @@ def get_thermochemistry(freq,proj_modes,mult,mass,B,rot_sym,sn,qrrho,temp=298.15
     tte = TTE(temp)
     tre = TRE(temp, rot_sym)
     if qrrho == True:
-        if omega_0 == 100:
-            print("The default value of omega_0 = 100 cm-1 is used.")
-        else:
-            print("The omega_0 = ",omega_0,"cm-1.")
+       # if omega_0 == 100:
+            #print("The default value of omega_0 = 100 cm-1 is used.")
+        #else:
+            #print("The omega_0 = ",omega_0,"cm-1.")
         tve = TVE(freq, proj_modes, temp, omega_0)[1]
         s_v = S_v(freq, proj_modes, temp, omega_0)[1]
     else:

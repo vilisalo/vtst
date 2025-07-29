@@ -450,6 +450,9 @@ class gaussian_parser:
                             hessian_cart[i][j] = hessian_cart[j][i]
                     self.hessian_cart = hessian_cart
                     
+                if "SCF Energy" in line:
+                    self.energy = float(next(file).split()[3])    
+                    
         file.close()
 
 
