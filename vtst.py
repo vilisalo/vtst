@@ -176,25 +176,29 @@ if use_gaussian == True:
             for file in os.listdir('.'):
                 if file.endswith(".fchk"):
                     mol = initialize_gaussian(file)
-                    f.write(file,mol.E,mol.U,mol.H,mol.S,mol.G,mol.stationary,"\n")
+                    output = [file,mol.E,mol.U,mol.H,mol.S,mol.G,mol.stationary]
+                    f.write(output+"\n")
         if len(sys.argv) > 1:
             if (len(sys.argv)) == 2:
                 file = str(sys.argv[1])
                 print("VTST script running for ",file," using default parameters: T=298.15K, p=1atm, qRRHO with omega=100 cm-1")
                 mol = initialize_gaussian(file)
-                f.write(file,mol.E,mol.U,mol.H,mol.S,mol.G,mol.stationary,"\n")
+                output = [file,mol.E,mol.U,mol.H,mol.S,mol.G,mol.stationary]
+                f.write(output+"\n")
             if (len(sys.argv)) == 3:
                 file = str(sys.argv[1])
                 T = sys.argv[2]
                 mol = initialize_gaussian(file,temp=T)
-                f.write(file,mol.E,mol.U,mol.H,mol.S,mol.G,mol.stationary,"\n")
+                output = [file,mol.E,mol.U,mol.H,mol.S,mol.G,mol.stationary]
+                f.write(output+"\n")
             if (len(sys.argv)) == 3:
                 file = str(sys.argv[1])
                 T = sys.argv[2]
                 p = sys.argv[3]
                 print("VTST script running for ",file," using: T=",T,"K, p=",p,"atm, qRRHO with omega=100 cm-1")
                 mol = initialize_gaussian(file,temp=T,pressure=p)
-                f.write(file,mol.E,mol.U,mol.H,mol.S,mol.G,mol.stationary,"\n")
+                output = [file,mol.E,mol.U,mol.H,mol.S,mol.G,mol.stationary]
+                f.write(output+"\n")
             if (len(sys.argv)) == 4:
                 file = str(sys.argv[1])
                 T = sys.argv[2]
@@ -202,7 +206,8 @@ if use_gaussian == True:
                 omg = sys.argv[4]
                 print("VTST script running for ",file," using: T=",T,"K, p=",p,"atm, qRRHO with omega=",omg,"cm-1")
                 mol = initialize_gaussian(file,temp=T,pressure=p,omega_0=omg)
-                f.write(file,mol.E,mol.U,mol.H,mol.S,mol.G,mol.stationary,"\n")
+                output = [file,mol.E,mol.U,mol.H,mol.S,mol.G,mol.stationary]
+                f.write(output+"\n")
                 
 
 
