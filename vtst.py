@@ -250,6 +250,15 @@ if use_gaussian == True:
             G_list = np.append(G_list, mol.G)
             stationary_list = np.append(stationary_list, mol.stationary)
             #f.write(str(file)+"\t"+str(mol.energy)+"\t"+str(mol.U)+"\t"+str(mol.H)+"\t"+str(mol.S)+"\t"+str(mol.G)+"\t"+str(mol.stationary)+"\n")
+
+idx = file_list.argsort()
+file_list = file_list[idx]
+E_list = E_list[idx]
+U_list=U_list[idx]
+H_list=H_list[idx]
+S_list=S_list[idx]
+G_list=G_list[idx]
+stationary_list=stationary_list[idx]
                 
 output_list = np.stack([file_list.astype(str),E_list.astype(float),U_list.astype(float),H_list.astype(float),S_list.astype(float),G_list.astype(float),stationary_list.astype(str)],axis=1)
 print(tabulate(output_list,headers=["filename","E (Eh)","U (Eh)","H (Eh)","S (Eh/K)","G (Eh)","Stationary (True=1, False=0)"], tablefmt="rst", floatfmt=(".4f",".4f",".4f",".4f",".4f",".4f",".0f"), colalign=("left","left","left","left","left","left","left")))
