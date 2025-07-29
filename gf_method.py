@@ -207,19 +207,14 @@ def dihed_b_tensor(i,j,k,l, atoms, com):
 
 def get_bmat_and_cmat(internal_coordinates,      # supplied by a definition file currently
                       com):                      # center-of-mass-coordinates
-    atoms = len(com)
-    file = open(internal_coordinates)         
+    atoms = len(com)       
     bonds_array=angles_array=diheds_array=[]
     bonds_tensor=angles_tensor=diheds_tensor=[]
     i=j=k=0
-    while True:
-        user_input = file.readline().split(',')
-        if user_input == ['']:
-            #print("Internal coordinates generated from Cartesian coordinates and connectivity information from",internal_coordinates)
-            break
-        if len(user_input) == 2:
-            bond = bonds_svectors(int(user_input[0]), int(user_input[1]), atoms, com)
-            bond_t = bond_b_tensor(int(user_input[0]), int(user_input[1]), atoms, com)
+    for l in internal_coordinates:
+        if l[2] == 0 and l[3] == 0:
+            bond = bonds_svectors(int(l[0]), int(l[1]), atoms, com)
+            bond_t = bond_b_tensor(int(l[0]), int(l[1]), atoms, com)
             if i == 0:
                 bonds_array = bond
                 bonds_tensor = bond_t
@@ -227,9 +222,9 @@ def get_bmat_and_cmat(internal_coordinates,      # supplied by a definition file
                 bonds_array = np.vstack((bonds_array, bond))
                 bonds_tensor = np.dstack((bonds_tensor, bond_t))
             i+=1
-        if len(user_input) == 3:
-            angle = angles_svectors(int(user_input[0]), int(user_input[1]), int(user_input[2]), atoms, com)
-            angle_t = angle_b_tensor(int(user_input[0]), int(user_input[1]), int(user_input[2]), atoms, com)
+        if l[2] != 0 and l[3] == 0:
+            angle = angles_svectors(int(l[0]), int(l[1]), int(l[2]), atoms, com)
+            angle_t = angle_b_tensor(int(l[0]), int(l[1]), int(l[2]), atoms, com)
             if j == 0:
                 angles_array = angle
                 angles_tensor = angle_t
@@ -237,9 +232,9 @@ def get_bmat_and_cmat(internal_coordinates,      # supplied by a definition file
                 angles_array = np.vstack((angles_array, angle))
                 angles_tensor = np.dstack((angles_tensor, angle_t))
             j+=1
-        if len(user_input) == 4:
-            dihed = dihed_svectors(int(user_input[0]), int(user_input[1]), int(user_input[2]), int(user_input[3]), atoms, com)
-            dihed_t = dihed_b_tensor(int(user_input[0]), int(user_input[1]), int(user_input[2]), int(user_input[3]), atoms, com)        
+        if l[2] != 0 and l[3] != 0:
+            dihed = dihed_svectors(int(l[0]), int(l[1]), int(l[2]), int(l[3]), atoms, com)
+            dihed_t = dihed_b_tensor(int(l[0]), int(l[1]), int(l[2]), int(l[3]), atoms, com)        
             if k == 0:
                 diheds_array = dihed
                 diheds_tensor = dihed_t

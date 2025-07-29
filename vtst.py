@@ -109,7 +109,6 @@ class initialize_gaussian:   # THIS GAUSSIAN TEST
             self.coord = parse.coord
             self.energy = parse.energy
             self.int = tools.get_redundant_internals(self.coord, self.atoms).int
-            self.internal_coordinates = "internal-coordinates.txt"
             self.com = self.coord - tools.get_center_mass(self.coord, self.masses)
             self.hessian_cart = parse.hessian_cart
             self.mass_matrix = parse.mass_matrix
@@ -121,7 +120,7 @@ class initialize_gaussian:   # THIS GAUSSIAN TEST
         except FileNotFoundError:
             print("The *.fchk file is not found.")
         try:
-            self.bmat, self.cmat = gf_method.get_bmat_and_cmat(self.internal_coordinates, self.com)
+            self.bmat, self.cmat = gf_method.get_bmat_and_cmat(self.int, self.com)
             self.fval, self.fvec = gf_method.gf_freqs(self.hessian_cart, self.mass_matrix, self.bmat, self.rot_sym)
             self.freq = output.frequencies(self.fval)
         except:
@@ -168,7 +167,7 @@ if use_gaussian == True and use_orca == True:
     print("Exiting...")
     sys.exit()
 
-#%%
+
 if use_gaussian == True:
     file_list=np.array([])
     E_list=np.array([])
