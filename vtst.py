@@ -209,23 +209,8 @@ if use_gaussian == True:
         
         if (len(sys.argv)) == 3:
             file = str(sys.argv[1])
-            T = sys.argv[2]
-            mol = initialize_gaussian(file,temp=T)
-            file_list = np.append(file_list, str(file))
-            E_list = np.append(E_list, mol.energy)
-            U_list = np.append(U_list, mol.U)
-            H_list = np.append(H_list, mol.H)
-            S_list = np.append(S_list, mol.S)
-            G_list = np.append(G_list, mol.G)
-            stationary_list = np.append(stationary_list, mol.stationary)
-            #f.write(str(file)+"\t"+str(mol.energy)+"\t"+str(mol.U)+"\t"+str(mol.H)+"\t"+str(mol.S)+"\t"+str(mol.G)+"\t"+str(mol.stationary)+"\n")
-
-        if (len(sys.argv)) == 3:
-            file = str(sys.argv[1])
-            T = sys.argv[2]
-            p = sys.argv[3]
-            print("VTST script running for ",file," using: T=",T,"K, p=",p,"atm, qRRHO with omega=100 cm-1")
-            mol = initialize_gaussian(file,temp=T,pressure=p)
+            T = float(sys.argv[2])
+            mol = initialize_gaussian(file,T)
             file_list = np.append(file_list, str(file))
             E_list = np.append(E_list, mol.energy)
             U_list = np.append(U_list, mol.U)
@@ -237,11 +222,26 @@ if use_gaussian == True:
 
         if (len(sys.argv)) == 4:
             file = str(sys.argv[1])
-            T = sys.argv[2]
-            p = sys.argv[3]
-            omg = sys.argv[4]
+            T = float(sys.argv[2])
+            p = float(sys.argv[3])
+            print("VTST script running for ",file," using: T=",T,"K, p=",p,"atm, qRRHO with omega=100 cm-1")
+            mol = initialize_gaussian(file,T,p)
+            file_list = np.append(file_list, str(file))
+            E_list = np.append(E_list, mol.energy)
+            U_list = np.append(U_list, mol.U)
+            H_list = np.append(H_list, mol.H)
+            S_list = np.append(S_list, mol.S)
+            G_list = np.append(G_list, mol.G)
+            stationary_list = np.append(stationary_list, mol.stationary)
+            #f.write(str(file)+"\t"+str(mol.energy)+"\t"+str(mol.U)+"\t"+str(mol.H)+"\t"+str(mol.S)+"\t"+str(mol.G)+"\t"+str(mol.stationary)+"\n")
+
+        if (len(sys.argv)) == 5:
+            file = str(sys.argv[1])
+            T = float(sys.argv[2])
+            p = float(sys.argv[3])
+            omg = float(sys.argv[4])
             print("VTST script running for ",file," using: T=",T,"K, p=",p,"atm, qRRHO with omega=",omg,"cm-1")
-            mol = initialize_gaussian(file,temp=T,pressure=p,omega_0=omg)
+            mol = initialize_gaussian(file,T,p,omg)
             file_list = np.append(file_list, str(file))
             E_list = np.append(E_list, mol.energy)
             U_list = np.append(U_list, mol.U)
