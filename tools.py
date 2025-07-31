@@ -238,19 +238,6 @@ class get_redundant_internals:
                 self.int = self.bonds
         except ValueError:
             print("Ill-defined internal coordinates")
-        
-        #### Write the internal coordinate to a file, THIS IS TEMPORARY SOLUTION
-        with open("internal-coordinates.txt", "w") as f:
-            for i in self.int:
-                if i[2] == 0:
-                    obj = ",".join(map(str,i[:2]))
-                    f.write(obj+"\n")
-                if i[2] != 0 and i[3] == 0:
-                    obj = ",".join(map(str,i[:3]))
-                    f.write(obj+"\n")
-                if i[2] != 0 and i[3] != 0:
-                    obj = ",".join(map(str,i[:4]))
-                    f.write(obj+"\n")
 
 def get_covalent_radius(atom):
     for i in atom_data:     

@@ -78,6 +78,11 @@ def bond_b_tensor(i,j, atoms, com):
     b_tensor[3*(j-1):(3*(j-1)+3),3*(j-1):(3*(j-1)+3)] =  1 * b_temp
     return b_tensor
 
+
+
+threshold = 0.0872664626    # 5 degrees in radians <- THIS VALUE NEEDS TO BE OPTIMIZED
+
+
 def angle_b_tensor(i,j,k, atoms, com):
     b_tensor = np.zeros((3*atoms,3*atoms))
     svector=angles_svectors(i,j,k,atoms,com)
@@ -111,6 +116,22 @@ def angle_b_tensor(i,j,k, atoms, com):
             b_tensor[3*(k-1)+a][3*(i-1)+b] =  fourth_term - cosq_a/sinq_a * svector[(3*(k-1)+a)] * svector[3*(i-1)+b]
             b_tensor[3*(k-1)+a][3*(j-1)+b] = -second_term - fourth_term - cosq_a/sinq_a * svector[(3*(k-1)+a)] * svector[3*(j-1)+b]
             b_tensor[3*(k-1)+a][3*(k-1)+b] =  second_term - cosq_a/sinq_a * svector[(3*(k-1)+a)] * svector[3*(k-1)+b]
+            
+            ### Check for threshold ###
+            if sinq_a < threshold:
+                #i-i,j,k terms
+                b_tensor[3*(i-1)+a][3*(i-1)+b] = 0.0
+                b_tensor[3*(i-1)+a][3*(j-1)+b] = 0.0
+                b_tensor[3*(i-1)+a][3*(k-1)+b] = 0.0
+                
+                #j-i,j,k terms
+                b_tensor[3*(j-1)+a][3*(i-1)+b] = 0.0
+                b_tensor[3*(j-1)+a][3*(j-1)+b] = 0.0
+                b_tensor[3*(j-1)+a][3*(k-1)+b] = 0.0
+                #k-i,j,k terms
+                b_tensor[3*(k-1)+a][3*(i-1)+b] = 0.0
+                b_tensor[3*(k-1)+a][3*(j-1)+b] = 0.0
+                b_tensor[3*(k-1)+a][3*(k-1)+b] = 0.0
     return b_tensor
 
 # i,i =  1 + 0 + 0 + 0
@@ -199,8 +220,27 @@ def dihed_b_tensor(i,j,k,l, atoms, com):
                     b_tensor[3*(l-1):(3*(l-1)+3),3*(k-1):(3*(k-1)+3)] = -second_term + fourth_term - eighth_term
                     b_tensor[3*(l-1):(3*(l-1)+3),3*(l-1):(3*(l-1)+3)] =  second_term
                     
-                    
-                    
+                    if sinq_u < threshold or sinq_v < threshold:
+                        b_tensor[3*(i-1):(3*(i-1)+3),3*(i-1):(3*(i-1)+3)] = 0.0
+                        b_tensor[3*(i-1):(3*(i-1)+3),3*(j-1):(3*(j-1)+3)] = 0.0
+                        b_tensor[3*(i-1):(3*(i-1)+3),3*(k-1):(3*(k-1)+3)] = 0.0 
+                        b_tensor[3*(i-1):(3*(i-1)+3),3*(l-1):(3*(l-1)+3)] = 0.0
+                        #j-i,j,k,l terms
+                        b_tensor[3*(j-1):(3*(j-1)+3),3*(i-1):(3*(i-1)+3)] = 0.0
+                        b_tensor[3*(j-1):(3*(j-1)+3),3*(j-1):(3*(j-1)+3)] = 0.0
+                        b_tensor[3*(j-1):(3*(j-1)+3),3*(k-1):(3*(k-1)+3)] = 0.0
+                        b_tensor[3*(j-1):(3*(j-1)+3),3*(l-1):(3*(l-1)+3)] = 0.0
+                        #k-i,j,k,l terms
+                        b_tensor[3*(k-1):(3*(k-1)+3),3*(i-1):(3*(i-1)+3)] = 0.0
+                        b_tensor[3*(k-1):(3*(k-1)+3),3*(j-1):(3*(j-1)+3)] = 0.0
+                        b_tensor[3*(k-1):(3*(k-1)+3),3*(k-1):(3*(k-1)+3)] = 0.0
+                        b_tensor[3*(k-1):(3*(k-1)+3),3*(l-1):(3*(l-1)+3)] = 0.0 
+                        #l-i,j,k,l terms
+                        b_tensor[3*(l-1):(3*(l-1)+3),3*(i-1):(3*(i-1)+3)] = 0.0
+                        b_tensor[3*(l-1):(3*(l-1)+3),3*(j-1):(3*(j-1)+3)] = 0.0
+                        b_tensor[3*(l-1):(3*(l-1)+3),3*(k-1):(3*(k-1)+3)] = 0.0
+                        b_tensor[3*(l-1):(3*(l-1)+3),3*(l-1):(3*(l-1)+3)] = 0.0
+                      
     return b_tensor
 
 
