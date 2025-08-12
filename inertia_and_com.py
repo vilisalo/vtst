@@ -55,7 +55,7 @@ def inertia_tensor(coord_com,mass):
         Ixz=Ixz-mass[i]*(coord_com[i][0]*coord_com[i][2])
         Iyz=Iyz-mass[i]*(coord_com[i][1]*coord_com[i][2])
     I_matrix = [[Ixx,Ixy,Ixz],[Ixy,Iyy,Iyz],[Ixz,Iyz,Izz]]
-    Ieigval, Ieigvec = np.linalg.eig(I_matrix)
+    Ieigval, Ieigvec = np.linalg.eigh(I_matrix)
     idx=Ieigval.argsort()
     Ieigval = Ieigval[idx]
     Ieigval=Ieigval*bohr_to_meter**2

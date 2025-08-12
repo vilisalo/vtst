@@ -1,4 +1,5 @@
 import warnings
+import sys
 import numpy as np
 import gf_method
 pm_to_bohr = 0.0188972599
@@ -19,7 +20,8 @@ def get_G_matrix_and_G_inv_matrix(matrix, tolerance=1e-7):
     G = U.dot(S).dot(VT)
     G_inv = VT.T.dot(S_inv).dot(U.T)
     return G,G_inv
-    
+
+
 def get_center_mass(coord, masses):
     cbye = [np.dot(masses[i], coord[i]) for i in range(len(coord))]
     r = np.sum(cbye, axis=0)
@@ -297,7 +299,49 @@ def isSubset(input,bonds):
             return False
     return True
 
+def isotopologize(masses, atoms, atomidx, isotop, func=max):
+    atom = atoms[atomidx]
+    def error_msg():
+        print("Incompatible definition of isotopes.")
+        print("Make sure that the atom indices and requested isotopes make sense.")
+        print("Your system consists of following atoms: ", atoms)
+        warnings.filterwarnings("ignore")
+        sys.exit()
+    if isotop == "D" or isotop == "T" and atom != "1":
+        error_msg()
+    if isotop == "C_13" or isotop == "C_14" and atom != "6":
+        error_msg()
+    if isotop == "N_15" and atom != "7":
+        error_msg()
+    if isotop == "O_17" or isotop == "O_18" and atom != "8":
+        error_msg()
+    if isotop == "Cl_37" and atom != "17":
+        error_msg()
+    if isotop == "Br_81" and atom != "35":
+        error_msg()
+    isotopemass = getattr(isotope, isotop)()
+    masses[atomidx] = func(masses[atomidx], isotopemass)
 
+class isotope():
+    def D():
+        return 2.014102
+    def T():
+        return 3.016049
+    def C_13():
+        return 13.003355
+    def C_14():
+        return 14.003242
+    def N_15():
+        return 15.000109
+    def O_17():
+        return 16.999132
+    def O_18():
+        return 17.999160
+    def Cl_37():
+        return 36.965903
+    def Br_81():
+        return 80.916291
+        
 atom_data = [
     # atomic number, symbols, names, masses, bohr radius, covalent radius
     [  0, "X", "X",            0.000000, 0.000, 0*pm_to_bohr],  # 0

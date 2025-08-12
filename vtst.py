@@ -16,6 +16,7 @@ bohr_to_ang=0.529177249
 use_qrrho = True
 use_gaussian = True
 use_orca = False
+isotopologize = False
 
 class initialize_orca:   # This initializes the required information from the *.hess and *.engrad files into instance variables
     """
@@ -62,7 +63,7 @@ class initialize_orca:   # This initializes the required information from the *.
             self.gradient_cart = parse.gradient_cart
             self.fval_p, self.fvec_p = gf_method.gf_proj_freqs(self.hessian_cart, self.gradient_cart, self.mass_matrix, self.bmat, self.cmat, self.rot_sym)
             self.freq_p = output.frequencies(self.fval_p)
-            if np.max(np.abs(self.gradient_cart)) > 0.001:
+            if np.max(np.abs(self.gradient_cart)) > 0.0010:
                 self.stationary = False
                 self.proj_modes = 1
                 self.freq = output.frequencies(self.fval_p)
@@ -86,18 +87,19 @@ class initialize_orca:   # This initializes the required information from the *.
             print()
 ###################################################################################################################################
 
-class initialize_gaussian:   # THIS GAUSSIAN TEST
+class initialize_gaussian:
     """
-    The initialize class currently only support ORCA files. The required files for full operationality are the *.hess, *.engrad files, and a internal coordinate definitions file.
-    Requires: filename  -> the parent filename of the ORCA files, as in filename.hess, and filename.engrad.
+    Requires: filename of the gaussian *.fchk file, optional inputs are temperature (temp), pressure, omega_0 value for qRRHO, and array for defining isotopal
+              composition (isotop). For example, if you want to change atom in idx 1 to be Deuterium, isotop=[1,"D"]
               internal coordinates -> Currently supplied via a textfile, but will be improved to be read automatically from ORCA output file etc.
     Returns: atoms, masses, coord, center-of-mass coordinates, Cartesian Hessian, matrix of atomic mass triplets, inertia eigenvalues and eigenvectors, rotational constants in cm-1, point group, rotational symmetry number.
     """
-    def __init__(self, filename, temp=298.15, pressure=1, omega_0=100):
+    def __init__(self, filename, temp=298.15, pressure=1, omega_0=100, isotop=None):
         self.filename = filename
         self.temp = temp
         self.pressure = pressure
         self.omega_0 = omega_0
+        self.isotop = isotop
         self.stationary = True ## This defaults to True, but if gradient is loaded, then the value is checked with criterion.
         self.proj_modes = 0
 
@@ -106,12 +108,15 @@ class initialize_gaussian:   # THIS GAUSSIAN TEST
             self.atoms = parse.atoms
             self.mult = parse.mult
             self.masses = parse.masses
+            if isotop != None:
+                for i in range(len(self.isotop)):
+                    tools.isotopologize(self.masses,self.atoms,int(self.isotop[i][0]),self.isotop[i][1])
+            self.mass_matrix = np.eye((3*len(self.atoms)))*np.ravel(np.outer(self.masses,[1.0]*3))
             self.coord = parse.coord
             self.energy = parse.energy
             self.int = tools.get_redundant_internals(self.coord, self.atoms).int
             self.com = self.coord - tools.get_center_mass(self.coord, self.masses)
             self.hessian_cart = parse.hessian_cart
-            self.mass_matrix = parse.mass_matrix
             self.Ieigval, self.Ieigvec, self.B = inertia_tensor(self.com, self.masses)
             self.principal_axis_coordinates = np.matmul(np.linalg.inv(self.Ieigvec),self.com.T).T
             self.pg = pg.PointGroup(self.coord, self.atoms, self.masses).get_point_group()
@@ -153,7 +158,7 @@ class initialize_gaussian:   # THIS GAUSSIAN TEST
             None
 
 
-
+#%%
 
 ##### MAIN PROGRAM STRUCTURE #####
 if use_gaussian == True and use_orca == False:
