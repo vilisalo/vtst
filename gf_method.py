@@ -334,6 +334,7 @@ def get_bmat_and_cmat(internal_coordinates,      # supplied by a definition file
 
 def gf_freqs(cart_hess, mass_matrix, bmat, rot_sym):
     u = np.linalg.inv(mass_matrix)
+    bmat = np.nan_to_num(bmat)
     G = bmat.dot(u).dot(bmat.T)
     G,G_inv = tools.get_G_matrix_and_G_inv_matrix(G)
     A = u.dot(bmat.T).dot(G_inv)
@@ -363,6 +364,8 @@ def gf_freqs(cart_hess, mass_matrix, bmat, rot_sym):
 
 def gf_proj_freqs(cart_hess, cart_grad, mass_matrix, bmat, cmat, rot_sym):
     u=np.linalg.inv(mass_matrix)
+    bmat = np.nan_to_num(bmat)
+    cmat = np.nan_to_num(cmat)
     G = bmat.dot(u).dot(bmat.T)
     G,G_inv = tools.get_G_matrix_and_G_inv_matrix(G)
     A = u.dot(bmat.T).dot(G_inv)
