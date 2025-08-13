@@ -300,24 +300,24 @@ def isSubset(input,bonds):
     return True
 
 def isotopologize(masses, atoms, atomidx, isotop, func=max):
-    atom = atoms[atomidx]
+    atom = int(atoms[atomidx])
     def error_msg():
         print("Incompatible definition of isotopes.")
         print("Make sure that the atom indices and requested isotopes make sense.")
         print("Your system consists of following atoms: ", atoms)
         warnings.filterwarnings("ignore")
         sys.exit()
-    if isotop == "D" or isotop == "T" and atom != "1":
+    if (isotop == "D" or isotop == "T") and atom != 1:
         error_msg()
-    if isotop == "C_13" or isotop == "C_14" and atom != "6":
+    if (isotop == "C_13" or isotop == "C_14") and atom != 6:
         error_msg()
-    if isotop == "N_15" and atom != "7":
+    if isotop == "N_15" and atom != 7:
         error_msg()
-    if isotop == "O_17" or isotop == "O_18" and atom != "8":
+    if (isotop == "O_17" or isotop == "O_18") and atom != 8:
         error_msg()
-    if isotop == "Cl_37" and atom != "17":
+    if isotop == "Cl_37" and atom != 17:
         error_msg()
-    if isotop == "Br_81" and atom != "35":
+    if isotop == "Br_81" and atom != 35:
         error_msg()
     isotopemass = getattr(isotope, isotop)()
     masses[atomidx] = func(masses[atomidx], isotopemass)

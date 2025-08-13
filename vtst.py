@@ -101,13 +101,14 @@ class initialize_gaussian:
         self.omega_0 = omega_0
         self.isotop = isotop
         self.stationary = True ## This defaults to True, but if gradient is loaded, then the value is checked with criterion.
-        self.proj_modes = 0
-
+        self.proj_modes = omega_0
+        
         try:
             parse = gaussian_parser(filename)
             self.atoms = parse.atoms
             self.mult = parse.mult
             self.masses = parse.masses
+
             if isotop != None:
                 for i in range(len(self.isotop)):
                     tools.isotopologize(self.masses,self.atoms,int(self.isotop[i][0]),self.isotop[i][1])
