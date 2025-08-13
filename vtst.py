@@ -90,7 +90,7 @@ class initialize_orca:   # This initializes the required information from the *.
 class initialize_gaussian:
     """
     Requires: filename of the gaussian *.fchk file, optional inputs are temperature (temp), pressure, omega_0 value for qRRHO, and array for defining isotopal
-              composition (isotop). For example, if you want to change atom in idx 1 to be Deuterium, isotop=[1,"D"]
+              composition (isotop). For example, if you want to change atom in idx 1 to be Deuterium, isotop=[[1,"D"]] (double-brackets required!)
               internal coordinates -> Currently supplied via a textfile, but will be improved to be read automatically from ORCA output file etc.
     Returns: atoms, masses, coord, center-of-mass coordinates, Cartesian Hessian, matrix of atomic mass triplets, inertia eigenvalues and eigenvectors, rotational constants in cm-1, point group, rotational symmetry number.
     """
@@ -176,6 +176,7 @@ if use_gaussian == True and use_orca == True:
 if use_gaussian == True:
     file_list=np.array([])
     E_list=np.array([])
+    E_ZPE_list=np.array([])
     U_list=np.array([])
     H_list=np.array([])
     S_list=np.array([])
@@ -190,6 +191,7 @@ if use_gaussian == True:
                 mol = initialize_gaussian(file)
                 file_list = np.append(file_list, str(file))
                 E_list = np.append(E_list, mol.energy)
+                E_ZPE_list = np.append(E_ZPE_list, (mol.energy+mol.ZPE))
                 U_list = np.append(U_list, mol.U)
                 H_list = np.append(H_list, mol.H)
                 S_list = np.append(S_list, mol.S)
@@ -204,6 +206,7 @@ if use_gaussian == True:
             mol = initialize_gaussian(file)
             file_list = np.append(file_list, str(file))
             E_list = np.append(E_list, mol.energy)
+            E_ZPE_list = np.append(E_ZPE_list, (mol.energy+mol.ZPE))
             U_list = np.append(U_list, mol.U)
             H_list = np.append(H_list, mol.H)
             S_list = np.append(S_list, mol.S)
@@ -217,6 +220,7 @@ if use_gaussian == True:
             mol = initialize_gaussian(file,T)
             file_list = np.append(file_list, str(file))
             E_list = np.append(E_list, mol.energy)
+            E_ZPE_list = np.append(E_ZPE_list, (mol.energy+mol.ZPE))
             U_list = np.append(U_list, mol.U)
             H_list = np.append(H_list, mol.H)
             S_list = np.append(S_list, mol.S)
@@ -232,6 +236,7 @@ if use_gaussian == True:
             mol = initialize_gaussian(file,T,p)
             file_list = np.append(file_list, str(file))
             E_list = np.append(E_list, mol.energy)
+            E_ZPE_list = np.append(E_ZPE_list, (mol.energy+mol.ZPE))
             U_list = np.append(U_list, mol.U)
             H_list = np.append(H_list, mol.H)
             S_list = np.append(S_list, mol.S)
@@ -248,6 +253,7 @@ if use_gaussian == True:
             mol = initialize_gaussian(file,T,p,omg)
             file_list = np.append(file_list, str(file))
             E_list = np.append(E_list, mol.energy)
+            E_ZPE_list = np.append(E_ZPE_list, (mol.energy+mol.ZPE))
             U_list = np.append(U_list, mol.U)
             H_list = np.append(H_list, mol.H)
             S_list = np.append(S_list, mol.S)
@@ -258,16 +264,17 @@ if use_gaussian == True:
 idx = file_list.argsort()
 file_list = file_list[idx]
 E_list = E_list[idx]
+E_ZPE_list = E_ZPE_list[idx]
 U_list=U_list[idx]
 H_list=H_list[idx]
 S_list=S_list[idx]
 G_list=G_list[idx]
 stationary_list=stationary_list[idx]
                 
-output_list = np.stack([file_list.astype(str),E_list.astype(float),U_list.astype(float),H_list.astype(float),S_list.astype(float),G_list.astype(float),stationary_list.astype(str)],axis=1)
-print(tabulate(output_list,headers=["filename","E (Eh)","U (Eh)","H (Eh)","S (Eh/K)","G (Eh)","Stationary (True=1, False=0)"], tablefmt="rst", floatfmt=(".4f",".4f",".4f",".4f",".4f",".4f",".0f"), colalign=("left","left","left","left","left","left","left")))
+output_list = np.stack([file_list.astype(str),E_list.astype(float),E_ZPE_list.astype(float),U_list.astype(float),H_list.astype(float),S_list.astype(float),G_list.astype(float),stationary_list.astype(str)],axis=1)
+print(tabulate(output_list,headers=["filename","E (Eh)","E+ZPE (Eh)","U (Eh)","H (Eh)","S (Eh/K)","G (Eh)","Stationary (True=1, False=0)"], tablefmt="rst", floatfmt=(".4f",".4f",".4f",".4f",".4f",".4f",".0f"), colalign=("left","left","left","left","left","left","left")))
 
 with open("output-vtst.out", "w") as f:
-    f.write(tabulate(output_list,headers=["filename","E (Eh)","U (Eh)","H (Eh)","S (Eh/K)","G (Eh)","Stationary (True=1, False=0)"], tablefmt="plain", floatfmt=(".10f",".10f",".10f",".10f",".10f",".10f",".0f"), colalign=("left","left","left","left","left","left","left")))
+    f.write(tabulate(output_list,headers=["filename","E (Eh)","E+ZPE (Eh)","U (Eh)","H (Eh)","S (Eh/K)","G (Eh)","Stationary (True=1, False=0)"], tablefmt="plain", floatfmt=(".10f",".10f",".10f",".10f",".10f",".10f",".0f"), colalign=("left","left","left","left","left","left","left")))
 print("Output written also to output-vtst.out file")
 
