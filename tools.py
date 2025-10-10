@@ -164,12 +164,29 @@ class get_redundant_internals:
                         if gf_method.length(coord[i],coord[j]) <= 1.3*cov_rad[i]+cov_rad[j]:
                             bonds.append([i+1,j+1]) 
             bonds=np.asarray(bonds, dtype=int)
-            #### NEW ADDITION, NOT TESTED PROPERLY
+            
+            
+            #### Check if one or more atoms are not bound to anything, make bond to nearest atom
+            if len(bonds) < len(atoms)-1:
+                for i in range(1,len(atoms)+1):
+                    if np.isin(bonds.flatten(),i).any() == False:
+                        temp_lengths=[]
+                        for j in range(1,len(atoms)+1):
+                            if j != i:
+                                length=gf_method.length(coord[i-1],coord[j-1])
+                                temp_lengths.append([length,j,i])
+                        min_distance=np.min(temp_lengths,axis=0)
+                        min_dist_atoms=np.array([int(min_distance[1]),int(min_distance[2])])
+                        bonds=np.r_[bonds,[min_dist_atoms]]
+            
+            
+            #### Connect fragments
             intramolecular_bonds = get_connectivity(bonds, coord)
             if len(intramolecular_bonds) != 0:
                 bonds = np.append(bonds, intramolecular_bonds, axis=0)
 
         #### Angles
+        
         if len(bonds) >= 2:
             angles=[]
             for i in range(len(bonds)):
@@ -188,48 +205,51 @@ class get_redundant_internals:
             angles=np.asarray(angles, dtype=int)
             
         #### Dihedrals and improper torsions
-        if len(angles) >= 2:
-            dihedrals=[]
-            for i in range(len(angles)):
-                for j in range(len(angles)):
-                    if i != j and i < j:
-                        if any(item in angles[i] for item in angles[j]) == True:
-                                if len(np.nonzero(np.in1d(angles[i],angles[j]))[0]) == 2:
-                                    
-                                    ### This condition applies to proper dihedrals
-                                    if any(angles[i] -angles[j] == 0) == False:
-                                        ### Permute atoms such that they match with linear bonding pattern
-                                        concatenated=np.concatenate((angles[i],angles[j]))
-                                        idx=np.unique(concatenated, return_index=True)[1]
-                                        trial_dihedral = np.array(([concatenated[i] for i in sorted(idx)]), dtype=int)
-                                        trial_dihedral = np.array(([trial_dihedral[0],trial_dihedral[1]], [trial_dihedral[1],trial_dihedral[2]], [trial_dihedral[2],trial_dihedral[3]]), dtype=int)                                        
-                                        if isSubset(trial_dihedral, bonds) == True:
-                                            dihedrals.append([concatenated[i] for i in sorted(idx)])
-                                        else:
-                                            concatenated=np.concatenate((np.flip(angles[i]),angles[j]))
+        if 'angles' in locals():                    
+            if len(angles) >= 2:
+                dihedrals=[]
+                for i in range(len(angles)):
+                    for j in range(len(angles)):
+                        if i != j and i < j:
+                            if any(item in angles[i] for item in angles[j]) == True:
+                                    if len(np.nonzero(np.in1d(angles[i],angles[j]))[0]) == 2:
+                                        
+                                        ### This condition applies to proper dihedrals
+                                        if any(angles[i] -angles[j] == 0) == False:
+                                            ### Permute atoms such that they match with linear bonding pattern
+                                            concatenated=np.concatenate((angles[i],angles[j]))
                                             idx=np.unique(concatenated, return_index=True)[1]
-                                            trial_dihedral = np.array(([concatenated[i] for i in sorted(idx)]))
-                                            trial_dihedral = np.array(([trial_dihedral[0],trial_dihedral[1]], [trial_dihedral[1],trial_dihedral[2]], [trial_dihedral[2],trial_dihedral[3]]))
+                                            trial_dihedral = np.array(([concatenated[i] for i in sorted(idx)]), dtype=int)
+                                            trial_dihedral = np.array(([trial_dihedral[0],trial_dihedral[1]], [trial_dihedral[1],trial_dihedral[2]], [trial_dihedral[2],trial_dihedral[3]]), dtype=int)                                        
                                             if isSubset(trial_dihedral, bonds) == True:
                                                 dihedrals.append([concatenated[i] for i in sorted(idx)])
                                             else:
-                                                concatenated=np.concatenate((angles[i],np.flip(angles[j])))
+                                                concatenated=np.concatenate((np.flip(angles[i]),angles[j]))
                                                 idx=np.unique(concatenated, return_index=True)[1]
-                                                trial_dihedral = np.array(([concatenated[item3] for item3 in sorted(idx)]))
-                                                dihedrals.append([concatenated[i] for i in sorted(idx)])
-                                    ### This bit finds the improper torsions        
-                                    if np.count_nonzero(angles[i]-angles[j] == 0) == 2:
-                                        if np.nonzero(np.in1d(angles[i],angles[j]))[0][0] == 0:
-                                            dihedrals.append([angles[i][0],angles[i][2],angles[j][2],angles[i][1]])
-
-            dihedrals=np.asarray(dihedrals, dtype=int)            
-            self.dihedrals = dihedrals    
+                                                trial_dihedral = np.array(([concatenated[i] for i in sorted(idx)]))
+                                                trial_dihedral = np.array(([trial_dihedral[0],trial_dihedral[1]], [trial_dihedral[1],trial_dihedral[2]], [trial_dihedral[2],trial_dihedral[3]]))
+                                                if isSubset(trial_dihedral, bonds) == True:
+                                                    dihedrals.append([concatenated[i] for i in sorted(idx)])
+                                                else:
+                                                    concatenated=np.concatenate((angles[i],np.flip(angles[j])))
+                                                    idx=np.unique(concatenated, return_index=True)[1]
+                                                    trial_dihedral = np.array(([concatenated[item3] for item3 in sorted(idx)]))
+                                                    dihedrals.append([concatenated[i] for i in sorted(idx)])
+                                        ### This bit finds the improper torsions        
+                                        if np.count_nonzero(angles[i]-angles[j] == 0) == 2:
+                                            None
+                                            #if np.nonzero(np.in1d(angles[i],angles[j]))[0][0] == 0:
+                                                #dihedrals.append([angles[i][0],angles[i][2],angles[j][2],angles[i][1]])
+    
+                dihedrals=np.asarray(dihedrals, dtype=int)            
+                self.dihedrals = dihedrals    
         
         
         #self.bonds = bonds
         self.bonds = np.hstack((bonds, np.zeros((len(bonds),2), dtype=int)), dtype=int)
         #self.angles = angles
-        self.angles = np.hstack((angles, np.zeros((len(angles),1), dtype=int)), dtype=int)
+        if 'angles' in locals():
+            self.angles = np.hstack((angles, np.zeros((len(angles),1), dtype=int)), dtype=int)
             
         try:    
             if len(bonds) >= 2 and len(angles) >= 2:

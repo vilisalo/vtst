@@ -14,9 +14,11 @@ kb=1.380649E-23
 bohr_to_ang=0.529177249
 
 use_qrrho = True
-use_gaussian = True
-use_orca = False
+use_gaussian = False
+use_orca = True
 isotopologize = False
+
+mult=2
 
 class initialize_orca:   # This initializes the required information from the *.hess and *.engrad files into instance variables
     """
@@ -53,7 +55,7 @@ class initialize_orca:   # This initializes the required information from the *.
             print("The *.hess file is not found.")
     
         try:
-            self.bmat, self.cmat = gf_method.get_bmat_and_cmat(self.internal_coordinates, self.com)
+            self.bmat, self.cmat = gf_method.get_bmat_and_cmat(self.int, self.com)
             self.fval, self.fvec = gf_method.gf_freqs(self.hessian_cart, self.mass_matrix, self.bmat, self.rot_sym)
             self.freq = output.frequencies(self.fval)
         except:
@@ -84,7 +86,7 @@ class initialize_orca:   # This initializes the required information from the *.
             self.S = self.thermochemistry[3]
             self.G = self.thermochemistry[4]
         finally:
-            print()
+            None
 ###################################################################################################################################
 
 class initialize_gaussian:
@@ -101,7 +103,7 @@ class initialize_gaussian:
         self.omega_0 = omega_0
         self.isotop = isotop
         self.stationary = True ## This defaults to True, but if gradient is loaded, then the value is checked with criterion.
-        self.proj_modes = omega_0
+        self.proj_modes = 0
         
         try:
             parse = gaussian_parser(filename)
@@ -158,7 +160,6 @@ class initialize_gaussian:
         finally:
             None
 
-
 #%%
 
 ##### MAIN PROGRAM STRUCTURE #####
@@ -173,18 +174,16 @@ if use_gaussian == True and use_orca == True:
     print("Exiting...")
     sys.exit()
 
+file_list=np.array([])
+E_list=np.array([])
+E_ZPE_list=np.array([])
+U_list=np.array([])
+H_list=np.array([])
+S_list=np.array([])
+G_list=np.array([])
+stationary_list=np.array([])
 
 if use_gaussian == True:
-    file_list=np.array([])
-    E_list=np.array([])
-    E_ZPE_list=np.array([])
-    U_list=np.array([])
-    H_list=np.array([])
-    S_list=np.array([])
-    G_list=np.array([])
-    stationary_list=np.array([])
-
-    #f.write("filename"+"\t"+"E (Eh)"+"\t"+"U (Eh)"+"\t"+"H (Eh)"+"\t"+"S (Eh)"+"\t"+"G (Eh)"+"Stationary"+"\n")
     if len(sys.argv) == 1:
         print("VTST script running for all *.fchk files using default parameters: T=298.15K, p=1atm, qRRHO with omega=100 cm-1")
         for file in os.listdir('.'):
@@ -198,9 +197,8 @@ if use_gaussian == True:
                 S_list = np.append(S_list, mol.S)
                 G_list = np.append(G_list, mol.G)
                 stationary_list = np.append(stationary_list, mol.stationary)
-                #f.write(str(file)+"\t"+str(mol.energy)+"\t"+str(mol.U)+"\t"+str(mol.H)+"\t"+str(mol.S)+"\t"+str(mol.G)+"\t"+str(mol.stationary)+"\n")
-    if len(sys.argv) > 1:
-       
+                    
+    if len(sys.argv) > 1: 
         if (len(sys.argv)) == 2:
             file = str(sys.argv[1])
             print("VTST script running for ",file," using default parameters: T=298.15K, p=1atm, qRRHO with omega=100 cm-1")
@@ -213,8 +211,7 @@ if use_gaussian == True:
             S_list = np.append(S_list, mol.S)
             G_list = np.append(G_list, mol.G)
             stationary_list = np.append(stationary_list, mol.stationary)
-            #f.write(str(file)+"\t"+str(mol.energy)+"\t"+str(mol.U)+"\t"+str(mol.H)+"\t"+str(mol.S)+"\t"+str(mol.G)+"\t"+str(mol.stationary)+"\n")
-        
+                    
         if (len(sys.argv)) == 3:
             file = str(sys.argv[1])
             T = float(sys.argv[2])
@@ -227,8 +224,7 @@ if use_gaussian == True:
             S_list = np.append(S_list, mol.S)
             G_list = np.append(G_list, mol.G)
             stationary_list = np.append(stationary_list, mol.stationary)
-            #f.write(str(file)+"\t"+str(mol.energy)+"\t"+str(mol.U)+"\t"+str(mol.H)+"\t"+str(mol.S)+"\t"+str(mol.G)+"\t"+str(mol.stationary)+"\n")
-
+            
         if (len(sys.argv)) == 4:
             file = str(sys.argv[1])
             T = float(sys.argv[2])
@@ -243,8 +239,7 @@ if use_gaussian == True:
             S_list = np.append(S_list, mol.S)
             G_list = np.append(G_list, mol.G)
             stationary_list = np.append(stationary_list, mol.stationary)
-            #f.write(str(file)+"\t"+str(mol.energy)+"\t"+str(mol.U)+"\t"+str(mol.H)+"\t"+str(mol.S)+"\t"+str(mol.G)+"\t"+str(mol.stationary)+"\n")
-
+            
         if (len(sys.argv)) == 5:
             file = str(sys.argv[1])
             T = float(sys.argv[2])
@@ -260,8 +255,86 @@ if use_gaussian == True:
             S_list = np.append(S_list, mol.S)
             G_list = np.append(G_list, mol.G)
             stationary_list = np.append(stationary_list, mol.stationary)
-            #f.write(str(file)+"\t"+str(mol.energy)+"\t"+str(mol.U)+"\t"+str(mol.H)+"\t"+str(mol.S)+"\t"+str(mol.G)+"\t"+str(mol.stationary)+"\n")
+            
+if use_orca == True:
+    if len(sys.argv) == 1:
+        print("VTST script running for all ORCA files using default parameters: T=298.15K, p=1atm, qRRHO with omega=100 cm-1")
+        for file in os.listdir('.'):
+            if file.endswith(".hess"):
+                file = os.path.splitext(file)[0]
+                mol = initialize_orca(file,mult)
+                file_list = np.append(file_list, str(file))
+                E_list = np.append(E_list, mol.energy)
+                E_ZPE_list = np.append(E_ZPE_list, (mol.energy+mol.ZPE))
+                U_list = np.append(U_list, mol.U)
+                H_list = np.append(H_list, mol.H)
+                S_list = np.append(S_list, mol.S)
+                G_list = np.append(G_list, mol.G)
+                stationary_list = np.append(stationary_list, mol.stationary)
+                    
+    if len(sys.argv) > 1: 
+        if (len(sys.argv)) == 2:
+            file = str(sys.argv[1])
+            print("VTST script running for ",file," using default parameters: T=298.15K, p=1atm, qRRHO with omega=100 cm-1")
+            file = os.path.splitext(file)[0]
+            mol = initialize_orca(file,mult)
+            file_list = np.append(file_list, str(file))
+            E_list = np.append(E_list, mol.energy)
+            E_ZPE_list = np.append(E_ZPE_list, (mol.energy+mol.ZPE))
+            U_list = np.append(U_list, mol.U)
+            H_list = np.append(H_list, mol.H)
+            S_list = np.append(S_list, mol.S)
+            G_list = np.append(G_list, mol.G)
+            stationary_list = np.append(stationary_list, mol.stationary)
+                    
+        if (len(sys.argv)) == 3:
+            file = str(sys.argv[1])
+            T = float(sys.argv[2])
+            file = os.path.splitext(file)[0]
+            mol = initialize_orca(file,mult,T)
+            file_list = np.append(file_list, str(file))
+            E_list = np.append(E_list, mol.energy)
+            E_ZPE_list = np.append(E_ZPE_list, (mol.energy+mol.ZPE))
+            U_list = np.append(U_list, mol.U)
+            H_list = np.append(H_list, mol.H)
+            S_list = np.append(S_list, mol.S)
+            G_list = np.append(G_list, mol.G)
+            stationary_list = np.append(stationary_list, mol.stationary)
+            
+        if (len(sys.argv)) == 4:
+            file = str(sys.argv[1])
+            T = float(sys.argv[2])
+            p = float(sys.argv[3])
+            print("VTST script running for ",file," using: T=",T,"K, p=",p,"atm, qRRHO with omega=100 cm-1")
+            file = os.path.splitext(file)[0]
+            mol = initialize_orca(file,mult,T,p)
+            file_list = np.append(file_list, str(file))
+            E_list = np.append(E_list, mol.energy)
+            E_ZPE_list = np.append(E_ZPE_list, (mol.energy+mol.ZPE))
+            U_list = np.append(U_list, mol.U)
+            H_list = np.append(H_list, mol.H)
+            S_list = np.append(S_list, mol.S)
+            G_list = np.append(G_list, mol.G)
+            stationary_list = np.append(stationary_list, mol.stationary)
+            
+        if (len(sys.argv)) == 5:
+            file = str(sys.argv[1])
+            T = float(sys.argv[2])
+            p = float(sys.argv[3])
+            omg = float(sys.argv[4])
+            print("VTST script running for ",file," using: T=",T,"K, p=",p,"atm, qRRHO with omega=",omg,"cm-1")
+            file = os.path.splitext(file)[0]
+            mol = initialize_orca(file,mult,T,p,omg)
+            file_list = np.append(file_list, str(file))
+            E_list = np.append(E_list, mol.energy)
+            E_ZPE_list = np.append(E_ZPE_list, (mol.energy+mol.ZPE))
+            U_list = np.append(U_list, mol.U)
+            H_list = np.append(H_list, mol.H)
+            S_list = np.append(S_list, mol.S)
+            G_list = np.append(G_list, mol.G)
+            stationary_list = np.append(stationary_list, mol.stationary)
 
+            
 idx = file_list.argsort()
 file_list = file_list[idx]
 E_list = E_list[idx]
@@ -273,9 +346,10 @@ G_list=G_list[idx]
 stationary_list=stationary_list[idx]
                 
 output_list = np.stack([file_list.astype(str),E_list.astype(float),E_ZPE_list.astype(float),U_list.astype(float),H_list.astype(float),S_list.astype(float),G_list.astype(float),stationary_list.astype(str)],axis=1)
-print(tabulate(output_list,headers=["filename","E (Eh)","E+ZPE (Eh)","U (Eh)","H (Eh)","S (Eh/K)","G (Eh)","Stationary (True=1, False=0)"], tablefmt="rst", floatfmt=(".4f",".4f",".4f",".4f",".4f",".4f",".0f"), colalign=("left","left","left","left","left","left","left")))
+print(tabulate(output_list,headers=["filename","E (Eh)","E+ZPE (Eh)","U (Eh)","H (Eh)","S (Eh/K)","G (Eh)","Stationary (True=1, False=0)"], tablefmt="rst", floatfmt=(".4f",".4f",".4f",".4f",".4f",".4f",".4f"), colalign=("left","left","left","left","left","left","left")))
 
 with open("output-vtst.out", "w") as f:
     f.write(tabulate(output_list,headers=["filename","E (Eh)","E+ZPE (Eh)","U (Eh)","H (Eh)","S (Eh/K)","G (Eh)","Stationary (True=1, False=0)"], tablefmt="plain", floatfmt=(".10f",".10f",".10f",".10f",".10f",".10f",".0f"), colalign=("left","left","left","left","left","left","left")))
 print("Output written also to output-vtst.out file")
+
 

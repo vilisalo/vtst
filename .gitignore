@@ -1,0 +1,8 @@
+*.log
+*.fchk
+*.chk
+*.hess
+*.opt
+*.engrad
+*.out
+*.txt

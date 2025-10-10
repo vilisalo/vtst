@@ -1,6 +1,7 @@
 import numpy as np
-import output
 import tools
+import warnings
+warnings.filterwarnings('ignore')
 
 def vector(A, B):
     vector = np.subtract(A,B)
