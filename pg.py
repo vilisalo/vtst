@@ -1,4 +1,5 @@
 import numpy as np
+from itertools import permutations
 from operations import Inversion, Rotation, ImproperRotation, Reflection, rotation_matrix
 import tools
 from input_reader import hessian_reader
@@ -205,7 +206,27 @@ class PointGroup:
         :return:
         """
 
-        from pointgroup.grid import get_cubed_sphere_grid_points
+        def get_cubed_sphere_grid_points(delta):
+            """
+            generate a cubed-grid points grid on the surface of an unitary sphere
+
+            :param delta: max angle between points (radians)
+            :return: list of points
+            """
+
+            num_points = int(1.0 / delta)
+        
+            if num_points < 1:
+                return [(1, 0, 0)]
+        
+            for i in range(-num_points, num_points+1):
+                x = i * delta
+                for j in range(-num_points, num_points+1):
+                    y = j * delta
+                    for p in permutations([x, y, 1]):
+                        norm = np.linalg.norm([x, y, 1])
+                        yield np.array(p)/norm
+
 
         main_axis = None
         while main_axis is None:

@@ -1,6 +1,7 @@
 import numpy as np
 import tools
 import warnings
+import central_differences
 warnings.filterwarnings('ignore')
 
 def vector(A, B):
@@ -177,30 +178,30 @@ def dihed_b_tensor(i,j,k,l, atoms, com):
                     ## These take into account the presumed typo in the coefficient in front of
                     ## eighth term in Bakken&Helgaker 2002
                     #i-i,j,k,l terms
-                    # b_tensor[3*(i-1)+a][3*(i-1)+b] =  first_term
-                    # b_tensor[3*(i-1)+a][3*(j-1)+b] = -first_term + third_term + seventh_term
-                    # b_tensor[3*(i-1)+a][3*(k-1)+b] = -third_term - seventh_term 
-                    # b_tensor[3*(i-1)+a][3*(l-1)+b] = 0
-                    # #j-i,j,k,l terms
-                    # b_tensor[3*(j-1)+a][3*(i-1)+b] = -first_term + third_term + seventh_term
-                    # b_tensor[3*(j-1)+a][3*(j-1)+b] =  first_term - 2*third_term - fifth_term + sixth_term - 2*seventh_term
-                    # b_tensor[3*(j-1)+a][3*(k-1)+b] =  third_term + fourth_term + fifth_term - sixth_term + seventh_term + eighth_term
-                    # b_tensor[3*(j-1)+a][3*(l-1)+b] = -fourth_term - eighth_term
-                    # #k-i,j,k,l terms
-                    # b_tensor[3*(k-1)+a][3*(i-1)+b] = -third_term - seventh_term
-                    # b_tensor[3*(k-1)+a][3*(j-1)+b] =  third_term + fourth_term + fifth_term - sixth_term + seventh_term + eighth_term
-                    # b_tensor[3*(k-1)+a][3*(k-1)+b] =  second_term - 2*fourth_term - fifth_term + sixth_term - 2*eighth_term
-                    # b_tensor[3*(k-1)+a][3*(l-1)+b] = -second_term + fourth_term + eighth_term
-                    # #l-i,j,k,l terms
-                    # b_tensor[3*(l-1)+a][3*(i-1)+b] = 0
-                    # b_tensor[3*(l-1)+a][3*(j-1)+b] = -fourth_term + eighth_term
-                    # b_tensor[3*(l-1)+a][3*(k-1)+b] = -second_term + fourth_term - eighth_term
-                    # b_tensor[3*(l-1)+a][3*(l-1)+b] =  second_term
+                    #b_tensor[3*(i-1)+a][3*(i-1)+b] =  first_term
+                    #b_tensor[3*(i-1)+a][3*(j-1)+b] = -first_term + third_term + seventh_term
+                    #b_tensor[3*(i-1)+a][3*(k-1)+b] = -third_term - seventh_term 
+                    #b_tensor[3*(i-1)+a][3*(l-1)+b] = 0
+                    ##j-i,j,k,l terms
+                    #b_tensor[3*(j-1)+a][3*(i-1)+b] = -first_term + third_term + seventh_term
+                    #b_tensor[3*(j-1)+a][3*(j-1)+b] =  first_term - 2*third_term - fifth_term + sixth_term - 2*seventh_term
+                    #b_tensor[3*(j-1)+a][3*(k-1)+b] =  third_term + fourth_term + fifth_term - sixth_term + seventh_term + eighth_term
+                    #b_tensor[3*(j-1)+a][3*(l-1)+b] = -fourth_term - eighth_term
+                    ##k-i,j,k,l terms
+                    #b_tensor[3*(k-1)+a][3*(i-1)+b] = -third_term - seventh_term
+                    #b_tensor[3*(k-1)+a][3*(j-1)+b] =  third_term + fourth_term + fifth_term - sixth_term + seventh_term + eighth_term
+                    #b_tensor[3*(k-1)+a][3*(k-1)+b] =  second_term - 2*fourth_term - fifth_term + sixth_term - 2*eighth_term
+                    #b_tensor[3*(k-1)+a][3*(l-1)+b] = -second_term + fourth_term + eighth_term
+                    ##l-i,j,k,l terms
+                    #b_tensor[3*(l-1)+a][3*(i-1)+b] = 0
+                    #b_tensor[3*(l-1)+a][3*(j-1)+b] = -fourth_term + eighth_term
+                    #b_tensor[3*(l-1)+a][3*(k-1)+b] = -second_term + fourth_term - eighth_term
+                    #b_tensor[3*(l-1)+a][3*(l-1)+b] =  second_term
                     
                     ## These are according to Bakken&Helgaker 2002 equations
                     ## (LHS are wrong, see correct form below...)
 
-                    ##i-i,j,k,l terms
+                    #i-i,j,k,l terms
                     b_tensor[3*(i-1):(3*(i-1)+3),3*(i-1):(3*(i-1)+3)] =  first_term
                     b_tensor[3*(i-1):(3*(i-1)+3),3*(j-1):(3*(j-1)+3)] = -first_term + third_term + seventh_term
                     b_tensor[3*(i-1):(3*(i-1)+3),3*(k-1):(3*(k-1)+3)] = -third_term - seventh_term 
@@ -226,17 +227,17 @@ def dihed_b_tensor(i,j,k,l, atoms, com):
                         b_tensor[3*(i-1):(3*(i-1)+3),3*(j-1):(3*(j-1)+3)] = 0.0
                         b_tensor[3*(i-1):(3*(i-1)+3),3*(k-1):(3*(k-1)+3)] = 0.0 
                         b_tensor[3*(i-1):(3*(i-1)+3),3*(l-1):(3*(l-1)+3)] = 0.0
-                        #j-i,j,k,l terms
+                       #j-i,j,k,l terms
                         b_tensor[3*(j-1):(3*(j-1)+3),3*(i-1):(3*(i-1)+3)] = 0.0
                         b_tensor[3*(j-1):(3*(j-1)+3),3*(j-1):(3*(j-1)+3)] = 0.0
                         b_tensor[3*(j-1):(3*(j-1)+3),3*(k-1):(3*(k-1)+3)] = 0.0
                         b_tensor[3*(j-1):(3*(j-1)+3),3*(l-1):(3*(l-1)+3)] = 0.0
-                        #k-i,j,k,l terms
+                       #k-i,j,k,l terms
                         b_tensor[3*(k-1):(3*(k-1)+3),3*(i-1):(3*(i-1)+3)] = 0.0
                         b_tensor[3*(k-1):(3*(k-1)+3),3*(j-1):(3*(j-1)+3)] = 0.0
                         b_tensor[3*(k-1):(3*(k-1)+3),3*(k-1):(3*(k-1)+3)] = 0.0
                         b_tensor[3*(k-1):(3*(k-1)+3),3*(l-1):(3*(l-1)+3)] = 0.0 
-                        #l-i,j,k,l terms
+                       #l-i,j,k,l terms
                         b_tensor[3*(l-1):(3*(l-1)+3),3*(i-1):(3*(i-1)+3)] = 0.0
                         b_tensor[3*(l-1):(3*(l-1)+3),3*(j-1):(3*(j-1)+3)] = 0.0
                         b_tensor[3*(l-1):(3*(l-1)+3),3*(k-1):(3*(k-1)+3)] = 0.0
@@ -301,6 +302,15 @@ def get_bmat_and_cmat(internal_coordinates,      # supplied by a definition file
     cmat=cmat.T
     return bmat,cmat
 
+
+def get_bmat_and_cmat_numerically(internal_coordinates,com):
+    bmat=np.zeros((len(internal_coordinates),len(com.flatten())))
+    cmat=np.zeros((len(internal_coordinates),len(com.flatten()),len(com.flatten())))
+    for i,j in enumerate(internal_coordinates):
+        bmat[i]=central_differences.get_bmat(com.flatten(), internal_coordinates[i])
+        cmat[i]=central_differences.get_cmat(com.flatten(), internal_coordinates[i])
+    #cmat=central_differences.get_cmat(com, internal_coordinates)
+    return bmat,cmat
 
 # def gf_freqs(cart_hess, mass_matrix, bmat, rot_sym):
 #     u=np.linalg.inv(mass_matrix)

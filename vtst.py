@@ -9,13 +9,14 @@ import pg
 import tools
 import gf_method
 from tabulate import tabulate
+import central_differences
 joule_to_hartree=229371044869059970
 kb=1.380649E-23
 bohr_to_ang=0.529177249
 
 use_qrrho = True
-use_gaussian = False
-use_orca = True
+use_gaussian = True
+use_orca = False
 isotopologize = False
 
 mult=2
@@ -36,8 +37,11 @@ class initialize_orca:   # This initializes the required information from the *.
         self.stationary = True ## This defaults to True, but if gradient is loaded, then the value is checked with criterion.
         self.proj_modes = 0
         parse = orca_parser(self.filename)
-        self.int = parse.int
-        self.internal_coordinates = "internal_coordinates.txt"
+        try:
+            self.int = parse.int
+            self.internal_coordinates = "internal_coordinates.txt"
+        except:
+            None
         
         try:
             self.atoms = parse.atoms
@@ -55,7 +59,7 @@ class initialize_orca:   # This initializes the required information from the *.
             print("The *.hess file is not found.")
     
         try:
-            self.bmat, self.cmat = gf_method.get_bmat_and_cmat(self.int, self.com)
+            self.bmat, self.cmat = gf_method.get_bmat_and_cmat_numerically(self.int, self.com)
             self.fval, self.fvec = gf_method.gf_freqs(self.hessian_cart, self.mass_matrix, self.bmat, self.rot_sym)
             self.freq = output.frequencies(self.fval)
         except:
@@ -110,6 +114,7 @@ class initialize_gaussian:
             self.atoms = parse.atoms
             self.mult = parse.mult
             self.masses = parse.masses
+            self.int = parse.int
 
             if isotop != None:
                 for i in range(len(self.isotop)):
@@ -117,7 +122,6 @@ class initialize_gaussian:
             self.mass_matrix = np.eye((3*len(self.atoms)))*np.ravel(np.outer(self.masses,[1.0]*3))
             self.coord = parse.coord
             self.energy = parse.energy
-            self.int = tools.get_redundant_internals(self.coord, self.atoms).int
             self.com = self.coord - tools.get_center_mass(self.coord, self.masses)
             self.hessian_cart = parse.hessian_cart
             self.Ieigval, self.Ieigvec, self.B = inertia_tensor(self.com, self.masses)
@@ -128,7 +132,7 @@ class initialize_gaussian:
         except FileNotFoundError:
             print("The *.fchk file is not found.")
         try:
-            self.bmat, self.cmat = gf_method.get_bmat_and_cmat(self.int, self.com)
+            self.bmat, self.cmat = gf_method.get_bmat_and_cmat_numerically(self.int, self.com)
             self.fval, self.fvec = gf_method.gf_freqs(self.hessian_cart, self.mass_matrix, self.bmat, self.rot_sym)
             self.freq = output.frequencies(self.fval)
         except:

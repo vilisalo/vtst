@@ -274,55 +274,6 @@ class orca_parser:
         except AttributeError:
             print("Ill-defined internal coordinates.")
     
-        # try:
-        #     with open(opt_file, 'r') as inp:
-        #         bonds_array=[]
-        #         angles_array=[]
-        #         dihedrals_array=[]
-        #         for line in inp:
-        #             if "$redundant_internals" in line:
-        #                 bonds,angles,dihedrals,impropers,cartesians = next(inp).split()
-        #                 self.bonds=int(bonds)
-        #                 self.angles=int(angles)
-        #                 self.dihedrals=int(dihedrals)
-        #                 for i in range(self.bonds):
-        #                     bonds_array.extend(next(inp).split()[:2])
-        #                 bonds_array = np.asarray(bonds_array, dtype=int)
-        #                 bonds_array = np.reshape(bonds_array, (self.bonds,int(len(bonds_array)/self.bonds)))
-        #                 bonds_array += 1
-        #                 self.bonds_array= bonds_array
-                        
-        #                 if self.angles != 0:
-        #                     for i in range(self.angles):
-        #                         angles_array.extend(next(inp).split()[:3])
-        #                     angles_array = np.asarray(angles_array, dtype=int)
-        #                     angles_array = np.reshape(angles_array, (self.angles,int(len(angles_array)/self.angles)))
-        #                     angles_array += 1
-        #                     self.angles_array= angles_array
-                            
-        #                 if self.dihedrals != 0:    
-        #                     for i in range(self.dihedrals):
-        #                         dihedrals_array.extend(next(inp).split()[:4])
-        #                     dihedrals_array = np.asarray(dihedrals_array, dtype=int)
-        #                     dihedrals_array = np.reshape(dihedrals_array, (self.dihedrals,int(len(dihedrals_array)/self.dihedrals)))
-        #                     dihedrals_array += 1
-        #                     self.dihedrals_array = dihedrals_array
-        #                 with open("internal_coordinates.txt", 'w') as f:
-        #                     for i in self.bonds_array:
-        #                         obj = ",".join(map(str,i))
-        #                         f.write(obj+"\n")
-        #                     if self.angles != 0:
-        #                         for i in self.angles_array:
-        #                             obj = ",".join(map(str,i))
-        #                             f.write(obj+"\n")    
-        #                     if self.dihedrals != 0:
-        #                         for i in self.dihedrals_array:
-        #                             obj = ",".join(map(str,i))
-        #                             f.write(obj+"\n")
-        #                     f.close()
-        # except FileNotFoundError:
-        #     print("*.opt file not found.")
-        #     self.opt_file = False
 
 ###### THESE ARE GAUSSIAN RELATED FUNCTIONS #######
 
@@ -400,22 +351,10 @@ class gaussian_parser:
                         redundant_coordinates.extend(next(file).split())
                     redundant_coordinates = np.asarray(redundant_coordinates, dtype=int)
                     redundant_coordinates = np.reshape(redundant_coordinates, (int(len(redundant_coordinates)/4), 4))                              
-                    self.int = redundant_coordinates
-                    with open("internal_coordinates.txt", "w") as f:
-                        for i in self.int:
-                            if i[2] == 0:
-                                obj = ",".join(map(str,i[:2]))
-                                f.write(obj+"\n")
-                            else:
-                                if i[3] == 0:
-                                    obj = ",".join(map(str,i[:3]))
-                                    f.write(obj+"\n")
-                                else:
-                                    obj = ",".join(map(str,i[:4]))
-                                    f.write(obj+"\n")
-                        f.close()
-                                
+                    #self.int = redundant_coordinates
+
                     
+                                   
                 if "Cartesian Gradient" in line:
                     gradient_cart = []
                     if (3*self.num_atoms)/5 >= 1:
@@ -451,8 +390,24 @@ class gaussian_parser:
                     self.hessian_cart = hessian_cart
                     
                 if "SCF Energy" in line:
-                    self.energy = float(next(file).split()[3])    
-                    
+                    self.energy = float(next(file).split()[3])
+            try:
+                self.int = tools.get_redundant_internals(self.coord, self.atoms).int     
+                with open("internal_coordinates.txt", "w") as f:
+                    for i in self.int:
+                        if i[2] == 0:
+                            obj = ",".join(map(str,i[:2]))
+                            f.write(obj+"\n")
+                        else:
+                            if i[3] == 0:
+                                obj = ",".join(map(str,i[:3]))
+                                f.write(obj+"\n")
+                            else:
+                                obj = ",".join(map(str,i[:4]))
+                                f.write(obj+"\n")
+                                f.close()
+            except:
+                None
         file.close()
 
 

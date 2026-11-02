@@ -72,19 +72,19 @@ def rotsym(Ieigval):
     Returns: Type of rotor (rot_sym), 0 = Spherical top, 1 = Linear rotor, 2 = Oblate symmetric top, 3 = Prolate symmetric top, 4 = Asymmetric rotor.
     """
     if round(Ieigval[0],24)==round(Ieigval[1],24)==round(Ieigval[2],24):
-        rot_sym=0   # Spherical top
+        rot_sym="Spherical top"   # Spherical top
         
     if round((Ieigval[1]-Ieigval[0])/Ieigval[1],8)==1 and round(Ieigval[1],24)==round(Ieigval[2],24):
-        rot_sym=1   # Linear rotor
+        rot_sym="Linear rotor"   # Linear rotor
         
     if round(Ieigval[0],24)==round(Ieigval[1],24) and round(Ieigval[1],24)<round(Ieigval[2],24):
-        rot_sym=2   # Oblate symmetric top
+        rot_sym="Oblate symmetric top"   # Oblate symmetric top
         
     if Ieigval[0]<Ieigval[1] and round((Ieigval[1]-Ieigval[0])/Ieigval[1],8)!=1 and round(Ieigval[1],24)==round(Ieigval[2],24):
-        rot_sym=3   # Prolate symmetric top
+        rot_sym="Prolate symmetric top"   # Prolate symmetric top
         
     if round(Ieigval[0],24)!=round(Ieigval[1],24)!=round(Ieigval[2],24):
-        rot_sym=4   # Asymmetric top
+        rot_sym="Asymmetric top"   # Asymmetric top
     return rot_sym
 
 def ZPE(freq,proj_modes):
@@ -129,7 +129,7 @@ def TRE(temp,rot_sym):
     
     Returns : Thermal rigid-rotor rotational energy (Eh)
     """
-    if rot_sym == 1:
+    if rot_sym == "Linear rotor":
         TRE=k*temp*joule_to_hartree
     else:
         TRE=3/2*k*temp*joule_to_hartree
@@ -203,9 +203,9 @@ def S_r(rot_sym,temp,B,sn):
     
     Returns : Rigid-rotor rotational entropy (Eh K-1)
     """
-    if rot_sym == 1:
+    if rot_sym == "Linear rotor":
         S_r=k*(np.log(temp/(sn*rot_temp(B[1])))+1)*joule_to_hartree
-    if rot_sym != 1:
+    if rot_sym != "Linear rotor":
         S_r=k*(np.log((1/sn)*np.sqrt((np.pi*temp**3)/(rot_temp(B[0])*rot_temp(B[1])*rot_temp(B[2]))))+3/2)*joule_to_hartree
     return S_r
 

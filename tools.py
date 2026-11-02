@@ -236,14 +236,24 @@ class get_redundant_internals:
                                                     trial_dihedral = np.array(([concatenated[item3] for item3 in sorted(idx)]))
                                                     dihedrals.append([concatenated[i] for i in sorted(idx)])
                                         ### This bit finds the improper torsions        
-                                        if np.count_nonzero(angles[i]-angles[j] == 0) == 2:
-                                            None
+                                        #if np.count_nonzero(angles[i]-angles[j] == 0) == 2:
+                                        #    None
                                             #if np.nonzero(np.in1d(angles[i],angles[j]))[0][0] == 0:
                                                 #dihedrals.append([angles[i][0],angles[i][2],angles[j][2],angles[i][1]])
-    
-                dihedrals=np.asarray(dihedrals, dtype=int)            
-                self.dihedrals = dihedrals    
-        
+                for i in angles:
+                    for j in bonds:
+                        if np.any(x == angles[i][2] for x in j):
+                            if set(j).issubset(i):
+                                None
+                            else:
+                                diff = set(j).difference(i).pop()
+                                dihedrals.append([i[0],i[1],i[2],diff])
+                dihedrals=np.asarray(dihedrals, dtype=int)
+                dihedrals=np.unique([tuple(row) for row in dihedrals], axis=0)
+                try:
+                    self.dihedrals = dihedrals
+                except:
+                    None
         
         #self.bonds = bonds
         self.bonds = np.hstack((bonds, np.zeros((len(bonds),2), dtype=int)), dtype=int)
