@@ -309,7 +309,6 @@ def get_bmat_and_cmat_numerically(internal_coordinates,com):
     for i,j in enumerate(internal_coordinates):
         bmat[i]=central_differences.get_bmat(com.flatten(), internal_coordinates[i])
         cmat[i]=central_differences.get_cmat(com.flatten(), internal_coordinates[i])
-    #cmat=central_differences.get_cmat(com, internal_coordinates)
     return bmat,cmat
 
 # def gf_freqs(cart_hess, mass_matrix, bmat, rot_sym):

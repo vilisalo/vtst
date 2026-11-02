@@ -9,7 +9,6 @@ import pg
 import tools
 import gf_method
 from tabulate import tabulate
-import central_differences
 joule_to_hartree=229371044869059970
 kb=1.380649E-23
 bohr_to_ang=0.529177249
